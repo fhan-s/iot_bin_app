@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:iot_bin_app/auth/auth_gate.dart';
 import 'package:iot_bin_app/pages/login_page.dart';
+import 'package:iot_bin_app/theme/theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
@@ -22,10 +24,8 @@ class MyApp extends StatelessWidget {
       // remove debug banner
       debugShowCheckedModeBanner: false,
       title: 'Bin IoT App',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const LoginPage(),
+      theme: AppTheme.lightThemeMode,
+      home: const AuthGate(),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iot_bin_app/auth/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -8,14 +9,18 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final authService = AuthService();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  void attemptLogin() {
+
+  void attemptLogin() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
     try {
+      await authService.signInWithEmailPassword(email, password);
       print(
         "Email: ${_emailController.text}, Password: ${_passwordController.text}",
       );
-      // authService.signInWithEmailPassword(
     } catch (e) {
       print("Error: $e");
     }
@@ -24,7 +29,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login Page')),
+      // appBar: AppBar(title: const Text('Login Page')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
