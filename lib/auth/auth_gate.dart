@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iot_bin_app/pages/janitor/dashboard.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:iot_bin_app/pages/login_page.dart';
 
@@ -19,7 +20,7 @@ class AuthGate extends StatelessWidget {
           final session = Supabase.instance.client.auth.currentSession;
           // User is logged in
           if (session != null) {
-            return Placeholder(); // Replace with your authenticated home page
+            return const JanitorDashboard(); // Replace with your authenticated home page
           } else {
             return const LoginPage();
           }

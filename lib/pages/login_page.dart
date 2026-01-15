@@ -14,15 +14,20 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
 
   void attemptLogin() async {
-    final email = _emailController.text;
-    final password = _passwordController.text;
+    // Get email and password from text fields
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
     try {
       await authService.signInWithEmailPassword(email, password);
       print(
         "Email: ${_emailController.text}, Password: ${_passwordController.text}",
       );
     } catch (e) {
+      // Handle login error
       print("Error: $e");
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
     }
   }
 
