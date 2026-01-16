@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class JanitorDashboard extends StatefulWidget {
-  const JanitorDashboard({super.key});
+class JanitorDashboardPage extends StatefulWidget {
+  const JanitorDashboardPage({super.key});
 
   @override
-  State<JanitorDashboard> createState() => _JanitorDashboardState();
+  State<JanitorDashboardPage> createState() => _JanitorDashboardPageState();
 }
 
-class _JanitorDashboardState extends State<JanitorDashboard> {
+class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
