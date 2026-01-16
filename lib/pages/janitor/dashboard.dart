@@ -29,6 +29,19 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
         ],
       ),
       body: const Center(child: Text('Welcome to the Janitor Dashboard!')),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.analytics),
+            label: 'Analytics',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
+        ],
+      ),
     );
   }
 }
