@@ -16,14 +16,15 @@ class AuthGate extends StatelessWidget {
         .from('janitorial_staff')
         .select('role')
         .eq('id', user.id)
-        .single();
-    return response['role'] as String?;
+        .maybeSingle();
+    return response?['role'] as String?;
   }
 
   @override
   Widget build(BuildContext context) {
+    final supabase = Supabase.instance.client;
     return StreamBuilder(
-      stream: Supabase.instance.client.auth.onAuthStateChange,
+      stream: supabase.auth.onAuthStateChange,
       builder: (context, snapshot) {
         try {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -31,7 +32,7 @@ class AuthGate extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          final session = Supabase.instance.client.auth.currentSession;
+          final session = supabase.auth.currentSession;
           // User is already logged in
           if (session != null) {
             return FutureBuilder<String?>(
@@ -45,11 +46,14 @@ class AuthGate extends StatelessWidget {
                 final role = roleSnapshot.data;
                 // Navigate based on user role
                 if (role == "manager") {
+                  debugPrint("<LOGIN OK---------: $role");
                   return const ManagerDashboardPage();
                 } else if (role == "janitor") {
+                  debugPrint("<LOGIN OK---------: $role");
                   return const JanitorDashboardPage();
                 } else {
                   // Unknown role or no role assigned
+                  debugPrint("LOGIN FAILED------: $role");
                   return const LoginPage();
                 }
               },
@@ -59,6 +63,7 @@ class AuthGate extends StatelessWidget {
             return const LoginPage();
           }
         } catch (e) {
+          debugPrint("LOGIN FAILED-------: $e");
           // In case of any error, redirect to login page
           return const LoginPage();
         }
