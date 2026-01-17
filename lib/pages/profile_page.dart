@@ -81,8 +81,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     await passwordReset();
                   },
                 ),
-                ElevatedButton(
-                  child: const Text('logout'),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.logout),
+                  label: const Text('logout'),
                   onPressed: () async {
                     await logout();
                   },
