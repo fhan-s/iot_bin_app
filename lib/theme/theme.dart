@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'app_colour_palette.dart';
 
 class AppTheme {
   static final lightThemeMode = ThemeData.light().copyWith(

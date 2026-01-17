@@ -3,6 +3,7 @@ import 'package:iot_bin_app/main.dart';
 import 'package:iot_bin_app/pages/janitor/analytic_page.dart';
 import 'package:iot_bin_app/pages/janitor/map_page.dart';
 import 'package:iot_bin_app/pages/janitor/dashboard_bins.dart';
+import 'package:iot_bin_app/pages/profile_page.dart';
 
 class JanitorDashboardPage extends StatefulWidget {
   const JanitorDashboardPage({super.key});
@@ -40,10 +41,6 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
     }
   }
 
-  Future<void> logout() async {
-    await supabase.auth.signOut();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,10 +48,13 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
         title: Text(getTitle()),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: "Logout",
+            icon: const Icon(Icons.person),
+            tooltip: "Profile",
             onPressed: () {
-              logout();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
             },
           ),
         ],
@@ -67,7 +67,7 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+            label: 'Janitor Dashboard',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.analytics),
