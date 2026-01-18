@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/main.dart';
 import 'package:iot_bin_app/pages/janitor/analytic_page.dart';
 import 'package:iot_bin_app/pages/janitor/map_page.dart';
 import 'package:iot_bin_app/pages/janitor/dashboard_bins.dart';

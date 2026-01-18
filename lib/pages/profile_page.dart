@@ -75,7 +75,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   userData['email'] ?? 'No Email',
                   style: const TextStyle(fontSize: 18),
                 ),
-                TextButton(
+                ElevatedButton(
                   child: const Text('Change Password'),
                   onPressed: () async {
                     await passwordReset();
