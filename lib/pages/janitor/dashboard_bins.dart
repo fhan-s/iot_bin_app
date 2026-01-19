@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:iot_bin_app/utils/bin_card.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:iot_bin_app/pages/janitor/bin_information.dart';
+import 'package:iot_bin_app/utils/fill_level_card_icon.dart';
 
 class JanitorDashboardBinsPage extends StatefulWidget {
   const JanitorDashboardBinsPage({super.key});
@@ -10,6 +13,16 @@ class JanitorDashboardBinsPage extends StatefulWidget {
 }
 
 class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage> {
+  final supabase = Supabase.instance.client;
+  Future<List<Map<String, dynamic>>> getBins() async {
+    final binData = await supabase
+        .from('bin_assignment')
+        .select('bin:bin (bin_id,bin_name, bin_status, fill_level)');
+    return (binData as List)
+        .map((row) => row['bin'] as Map<String, dynamic>)
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,23 +58,61 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage> {
             ),
           ),
           Text(
-            'All Bins',
+            'My Bins',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           // SearchBar(hintText: 'Search Bins'),
 
           //tiles for each bin with status info
           Expanded(
-            child: ListView.builder(
-              itemCount: 20,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  leading: const Icon(Icons.delete),
-                  title: Text('Bin ${index + 1}'),
-                  subtitle: const Text(
-                    'Status: Empty\nLast Emptied: 2 days ago',
-                  ),
-                  isThreeLine: true,
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: getBins(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  print(snapshot.error);
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No bins found.'));
+                }
+                final bins = snapshot.data!;
+                return ListView.builder(
+                  itemCount: bins.length,
+                  itemBuilder: (context, index) {
+                    final bin = bins[index];
+                    return ListTile(
+                      leading: const Icon(Icons.delete),
+                      title: Text('${bin['bin_name']}'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Status: ${bin['bin_status']}'),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              FillLevelCardIcon(
+                                fillLevel: bin['fill_level'] ?? 0,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      isThreeLine: true,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BinInformationPage(
+                              binId: bin['bin_id'].toString(),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 );
               },
             ),

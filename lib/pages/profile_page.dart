@@ -63,6 +63,7 @@ class _ProfilePageState extends State<ProfilePage> {
           return Center(
             child: Column(
               children: [
+                Icon(Icons.person, size: 100, color: Colors.grey),
                 Text(
                   userData['full_name'] ?? 'No Name',
                   style: const TextStyle(fontSize: 24),
