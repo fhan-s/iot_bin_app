@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "555276548646",
+    "project_id": "fyp-bin-app",
+    "storage_bucket": "fyp-bin-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:555276548646:android:951f9fc2e3b6183b62c4e7",
+        "android_client_info": {
+          "package_name": "com.example.iot_bin_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA99rgTW1XbXU4e_aAeO4GuoFSBNaM-y60"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
