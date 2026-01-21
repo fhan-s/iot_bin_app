@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:iot_bin_app/pages/janitor/analytic_page.dart';
 import 'package:iot_bin_app/pages/janitor/map_page.dart';

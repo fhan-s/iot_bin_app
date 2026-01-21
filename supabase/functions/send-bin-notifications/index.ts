@@ -3,19 +3,36 @@
 // This enables autocomplete, go to definition, etc.
 
 // Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
+import { createClient } from "@supabase/supabase-js"
 console.log("Hello from Functions!")
 
-Deno.serve(async (req) => {
-  const { name } = await req.json()
-  const data = {
-    message: `Hello ${name}!`,
-  }
+interface WebhookPayload {
+  bin_id: string
+  status: string
+  fill_level: number
+  created_at: string
+};
 
+type SupabaseWebhookPayload = {
+  type?: string;
+  table?: string;
+  record: WebhookPayload;
+  new?: WebhookPayload;
+  old?: WebhookPayload;
+};
+
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  // bypass role level security 
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+)
+
+Deno.serve(async (req) => {
+  const payload: WebhookPayload = await req.json()
   return new Response(
-    JSON.stringify(data),
-    { headers: { "Content-Type": "application/json" } },
+    JSON.stringify({ message: "Notification sent successfully" }),
+    { status: 200 },
   )
 })
 
