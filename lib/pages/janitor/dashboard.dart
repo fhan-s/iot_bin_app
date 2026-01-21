@@ -96,6 +96,7 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // app bar with title and profile button
       appBar: AppBar(
         title: Text(getTitle()),
         actions: [
@@ -112,6 +113,7 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
         ],
       ),
       body: getSelectedPage(),
+      // bottom navigation bar to switch between pages
       bottomNavigationBar: BottomNavigationBar(
         // uses the first index (0) as the default selected page
         currentIndex: selectedIndex,

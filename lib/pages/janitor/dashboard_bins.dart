@@ -30,12 +30,15 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage> {
         children: [
           //4 boxes representing janitor bins
           Expanded(
-            flex: 1,
-            child: SizedBox(
+            flex: 2,
+            child: Container(
               width: double.infinity,
+              color: const Color.fromARGB(255, 189, 126, 126),
               child: GridView.count(
                 crossAxisCount: 2,
                 childAspectRatio: 1.2,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(8),
                 children: [
                   BinCard(title: 'Total Bins', value: '0', icon: Icons.delete),
                   BinCard(
@@ -57,14 +60,27 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage> {
               ),
             ),
           ),
-          Text(
-            'My Bins',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          // SearchBar(hintText: 'Search Bins'),
+          // Container(
+          //   padding: const EdgeInsets.all(8.0),
+          //   color: const Color.fromARGB(255, 141, 131, 196),
+          //   child: Column(
+          //     children: [
+          //       const Align(
+          //         alignment: Alignment.centerLeft,
+          //         child: Text(
+          //           'My Bins',
+          //           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          //         ),
+          //       ),
+          //       const SizedBox(height: 8),
+          //       SearchBar(hintText: 'Search Bins'),
+          //     ],
+          //   ),
+          // ),
 
           //tiles for each bin with status info
           Expanded(
+            flex: 1,
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: getBins(),
               builder: (context, snapshot) {
