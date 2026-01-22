@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:iot_bin_app/utils/bin_fill_icon.dart';
 
 class BinInformationPage extends StatefulWidget {
   const BinInformationPage({super.key, required this.binId});
@@ -17,11 +18,21 @@ class _BinInformationPageState extends State<BinInformationPage> {
     final binData = await supabase
         .from('bin')
         .select(
-          'bin_name, bin_status, floor:floor_id (floor_label, building:building_id (building_name))',
+          ''' bin_name, bin_status, fill_level, floor:floor_id ( floor_label, building:building_id (building_name) ), device:sensor_device ( device_id, device_name, device_serial_number, device_status, latest_battery_level ) ''',
         )
         .eq('bin_id', widget.binId)
         .single();
     return Map<String, dynamic>.from(binData);
+  }
+
+  Color getBinColor(int fillLevel) {
+    final normalized = (fillLevel / 100).clamp(0.0, 1.0);
+
+    return Color.lerp(
+      Colors.grey, // empty bin
+      Colors.green, // full bin
+      normalized,
+    )!;
   }
 
   @override
@@ -46,30 +57,23 @@ class _BinInformationPageState extends State<BinInformationPage> {
           final binStatus = binInfo['bin_status'];
           final binFloor = binInfo['floor'];
           final binBuilding = binFloor['building'];
+          final binFillLevel = binInfo['fill_level'];
+          final devices = (binInfo['device'] as List?) ?? [];
+          final device = devices.isNotEmpty
+              ? devices.first as Map<String, dynamic>
+              : null;
+
+          final deviceName = device?['device_name'];
+          final deviceSerialNumber = device?['device_serial_number'];
+          final deviceStatus = device?['device_status'];
+          final deviceBatteryLevel = device?['latest_battery_level'];
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.delete,
-                  size: 100,
-                  color: Color.fromARGB(255, 126, 126, 126),
-                ),
-                Icon(
-                  Icons.delete,
-                  size: 100,
-                  color: Color.fromARGB(255, 63, 196, 51),
-                ),
-                Text('Status: N/A', style: const TextStyle(fontSize: 18)),
-                const SizedBox(height: 8),
-                Text(
-                  'Battery Level: N/A',
-                  style: const TextStyle(fontSize: 18),
-                ),
-                Text('Time Running: N/A', style: const TextStyle(fontSize: 18)),
-                const SizedBox(height: 8),
+                BinFillIcon(fillLevel: binFillLevel, size: 60),
                 Text('Name: $binName', style: const TextStyle(fontSize: 18)),
                 const SizedBox(height: 8),
                 Text(
@@ -82,10 +86,25 @@ class _BinInformationPageState extends State<BinInformationPage> {
                   style: const TextStyle(fontSize: 18),
                 ),
                 const SizedBox(height: 8),
-                Text('Fill Level: N/A', style: const TextStyle(fontSize: 18)),
+                Text(
+                  'Fill Level: $binFillLevel',
+                  style: const TextStyle(fontSize: 18),
+                ),
                 const SizedBox(height: 8),
+                Text(
+                  'Device Serial Number: $deviceSerialNumber',
+                  style: const TextStyle(fontSize: 18),
+                ),
                 const SizedBox(height: 8),
-                Text('Device ID: N/A', style: const TextStyle(fontSize: 18)),
+                Text(
+                  'Device Name: $deviceName',
+                  style: const TextStyle(fontSize: 18),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Battery Level: $deviceBatteryLevel%',
+                  style: const TextStyle(fontSize: 18),
+                ),
                 const SizedBox(height: 8),
                 ElevatedButton(onPressed: () {}, child: const Text('Update')),
                 ElevatedButton(onPressed: () {}, child: const Text('Turn Off')),

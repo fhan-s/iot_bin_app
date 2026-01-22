@@ -33,27 +33,30 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage> {
             flex: 2,
             child: Container(
               width: double.infinity,
-              color: const Color.fromARGB(255, 189, 126, 126),
               child: GridView.count(
                 crossAxisCount: 2,
                 childAspectRatio: 1.2,
                 physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(8),
                 children: [
-                  BinCard(title: 'Total Bins', value: '0', icon: Icons.delete),
+                  BinCard(
+                    title: 'Total Bins',
+                    value: 'n/a',
+                    icon: Icons.delete,
+                  ),
                   BinCard(
                     title: 'Bins Needing Attention',
-                    value: '0',
+                    value: 'n/a',
                     icon: Icons.warning,
                   ),
                   BinCard(
                     title: 'Bins emptied Today',
-                    value: '0',
+                    value: 'n/a',
                     icon: Icons.check_circle,
                   ),
                   BinCard(
                     title: 'Average response time',
-                    value: '0 min',
+                    value: 'n/a',
                     icon: Icons.bar_chart,
                   ),
                 ],
@@ -95,38 +98,55 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage> {
                   return const Center(child: Text('No bins found.'));
                 }
                 final bins = snapshot.data!;
+
+                // sort bins in descending fill level
+                bins.sort((a, b) {
+                  final fillA = (a['fill_level'] ?? 0) as int;
+                  final fillB = (b['fill_level'] ?? 0) as int;
+                  return fillB.compareTo(fillA);
+                });
                 return ListView.builder(
                   itemCount: bins.length,
                   itemBuilder: (context, index) {
                     final bin = bins[index];
-                    return ListTile(
-                      leading: const Icon(Icons.delete),
-                      title: Text('${bin['bin_name']}'),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Status: ${bin['bin_status']}'),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              FillLevelCardIcon(
-                                fillLevel: bin['fill_level'] ?? 0,
-                              ),
-                            ],
-                          ),
-                        ],
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
-                      isThreeLine: true,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => BinInformationPage(
-                              binId: bin['bin_id'].toString(),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.grey.shade400,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: ListTile(
+                        leading: const Icon(Icons.delete),
+                        title: Text(bin['bin_name']),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Status: ${bin['bin_status']}'),
+                            const SizedBox(height: 4),
+                            FillLevelCardIcon(
+                              fillLevel: bin['fill_level'] ?? 0,
                             ),
-                          ),
-                        );
-                      },
+                          ],
+                        ),
+                        isThreeLine: true,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BinInformationPage(
+                                binId: bin['bin_id'].toString(),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     );
                   },
                 );

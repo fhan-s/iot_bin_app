@@ -64,6 +64,8 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               children: [
                 Icon(Icons.person, size: 100, color: Colors.grey),
+                Icon(Icons.edit, size: 30, color: Colors.grey),
+
                 Text(
                   userData['full_name'] ?? 'No Name',
                   style: const TextStyle(fontSize: 24),

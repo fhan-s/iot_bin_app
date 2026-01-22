@@ -10,6 +10,25 @@ class JanitorAnalyticPage extends StatefulWidget {
 class _JanitorAnalyticPageState extends State<JanitorAnalyticPage> {
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Analytics Page'));
+    return Scaffold(
+      body: Column(
+        children: [
+          //4 boxes representing janitor bins
+          Expanded(
+            flex: 2,
+            child: Container(
+              width: double.infinity,
+              child: GridView.count(
+                crossAxisCount: 2,
+                childAspectRatio: 1.2,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(8),
+                children: [],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

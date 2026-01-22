@@ -21,10 +21,10 @@ class FillLevelCardIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = getFillColor(fillLevel);
     return Container(
-      width: 100,
-      height: 120,
+      width: 50,
+      height: 70,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color, width: 2),
       ),
