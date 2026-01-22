@@ -16,7 +16,7 @@ class _JanitorAnalyticPageState extends State<JanitorAnalyticPage> {
           //4 boxes representing janitor bins
           Expanded(
             flex: 2,
-            child: Container(
+            child: SizedBox(
               width: double.infinity,
               child: GridView.count(
                 crossAxisCount: 2,

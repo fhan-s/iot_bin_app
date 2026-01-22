@@ -31,7 +31,7 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage> {
           //4 boxes representing janitor bins
           Expanded(
             flex: 2,
-            child: Container(
+            child: SizedBox(
               width: double.infinity,
               child: GridView.count(
                 crossAxisCount: 2,
@@ -124,10 +124,10 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage> {
                       ),
                       child: ListTile(
                         leading: const Icon(Icons.delete),
-                        title: Text(bin['bin_name']),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Text('Bin name: ${bin['bin_name']}'),
                             Text('Status: ${bin['bin_status']}'),
                             const SizedBox(height: 4),
                             FillLevelCardIcon(

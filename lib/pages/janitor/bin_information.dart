@@ -25,16 +25,6 @@ class _BinInformationPageState extends State<BinInformationPage> {
     return Map<String, dynamic>.from(binData);
   }
 
-  Color getBinColor(int fillLevel) {
-    final normalized = (fillLevel / 100).clamp(0.0, 1.0);
-
-    return Color.lerp(
-      Colors.grey, // empty bin
-      Colors.green, // full bin
-      normalized,
-    )!;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,6 +64,10 @@ class _BinInformationPageState extends State<BinInformationPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 BinFillIcon(fillLevel: binFillLevel, size: 60),
+                Text(
+                  'Device Status: $deviceStatus',
+                  style: const TextStyle(fontSize: 18),
+                ),
                 Text('Name: $binName', style: const TextStyle(fontSize: 18)),
                 const SizedBox(height: 8),
                 Text(
@@ -105,6 +99,7 @@ class _BinInformationPageState extends State<BinInformationPage> {
                   'Battery Level: $deviceBatteryLevel%',
                   style: const TextStyle(fontSize: 18),
                 ),
+                Text('Last Updated: N/A', style: const TextStyle(fontSize: 18)),
                 const SizedBox(height: 8),
                 ElevatedButton(onPressed: () {}, child: const Text('Update')),
                 ElevatedButton(onPressed: () {}, child: const Text('Turn Off')),
