@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/auth/auth_gate.dart';
-import 'package:iot_bin_app/hidden/app_details.dart';
-import 'package:iot_bin_app/theme/theme.dart';
+import 'package:iot_bin_app/features/authentication/auth_gate.dart';
+import 'package:iot_bin_app/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:iot_bin_app/config/env.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await Supabase.initialize(
-    url: AppDetails.supabaseURL,
-    anonKey: AppDetails.supabaseAnonKey,
-  );
+  await Supabase.initialize(url: Env.supabaseUrl, anonKey: Env.supabaseAnonKey);
   runApp(MyApp());
 }
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/pages/janitor/dashboard.dart';
-import 'package:iot_bin_app/pages/manager/dashboard.dart';
+import 'package:iot_bin_app/features/dashboards/janitor/dashboard.dart';
+import 'package:iot_bin_app/features/dashboards/manager/dashboard.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:iot_bin_app/pages/login_page.dart';
+import 'package:iot_bin_app/features/login/login_page.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iot_bin_app/utils/bin_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:iot_bin_app/pages/janitor/bin_information.dart';
+import 'package:iot_bin_app/features/dashboards/janitor/bin_information.dart';
 import 'package:iot_bin_app/utils/fill_level_card_icon.dart';
 
 class JanitorDashboardBinsPage extends StatefulWidget {

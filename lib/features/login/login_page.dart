@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/auth/auth_service.dart';
+import 'package:iot_bin_app/features/authentication/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
