@@ -1,4 +1,5 @@
 import 'package:envied/envied.dart';
+// Rebuild trigger
 part 'env.g.dart';
 
 @Envied(path: '.env')
