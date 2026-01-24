@@ -12,8 +12,14 @@ class JanitorDashboardBinsPage extends StatefulWidget {
       _JanitorDashboardBinsPageState();
 }
 
-class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage> {
+class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
+    with WidgetsBindingObserver {
   final supabase = Supabase.instance.client;
+  RealtimeChannel? channel;
+  List<Map<String, dynamic>> bins = [];
+  Set<String> myBinsIDs = {};
+
+  //fetch janitor's allocated bins from bin_assignment table
   Future<List<Map<String, dynamic>>> getBins() async {
     final binData = await supabase
         .from('bin_assignment')
@@ -21,6 +27,89 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage> {
     return (binData as List)
         .map((row) => row['bin'] as Map<String, dynamic>)
         .toList();
+  }
+
+  // Future<int> countBins(String janitorId) async {
+  //   final countResponse = await supabase
+  //       .from('bin_assignment')
+  //       .select('bin_id', const FetchOptions(count: CountOption.exact))
+  //       .eq('janitor_id', janitorId);
+  //   return countResponse.count ?? 0;
+  // }
+  Future<void> loadBins() async {
+    final loadedBins = await getBins();
+
+    // sort bins in descending fill level
+    loadedBins.sort((a, b) {
+      final fillA = (a['fill_level'] ?? 0) as int;
+      final fillB = (b['fill_level'] ?? 0) as int;
+      return fillB.compareTo(fillA);
+    });
+
+    setState(() {
+      bins = loadedBins;
+      myBinsIDs = bins.map((bin) => bin['bin_id'].toString()).toSet();
+    });
+  }
+
+  Future<void> realTimeUpdates() async {
+    //load and get all janitor allocated bins first
+    await loadBins();
+
+    //get bin IDs
+    myBinsIDs = (await getBins())
+        .map((bin) => bin['bin_id'].toString())
+        .toSet();
+
+    if (channel != null) {
+      supabase.removeChannel(channel!);
+    }
+    // //subscribe to real-time updates for the janitor's bins
+    channel = supabase.channel('realtime_bins_channel');
+
+    //listen for updates on the bin table
+    channel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'bin',
+          callback: (payload) async {
+            final updatedBin = payload.newRecord;
+            final updatedBinId = updatedBin['bin_id']?.toString();
+            // If the updated bin is in the janitor's allocated bins, refresh the bin list
+            if (updatedBinId != null && myBinsIDs.contains(updatedBinId)) {
+              await loadBins();
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  // listen for app lifecycle changes
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App has come to the foreground
+      realTimeUpdates();
+    }
+  }
+
+  // init state to setup real-time updates
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    realTimeUpdates();
+  }
+
+  // dispose to remove channel subscription
+  @override
+  void dispose() {
+    if (channel != null) {
+      supabase.removeChannel(channel!);
+    }
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
