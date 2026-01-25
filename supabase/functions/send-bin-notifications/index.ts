@@ -56,7 +56,32 @@ Deno.serve(async (req) => {
     });
 
     // send notification to each token
-    for (const fcmToken of tokensData?.map(t => t.fcm_token) ?? []) {
+    // for (const fcmToken of tokensData?.map(t => t.fcm_token) ?? []) {
+    // const response = await fetch(`https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`, {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //     Authorization: `Bearer ${accessToken}`,
+    //   },
+    //   body: JSON.stringify({
+    //     message: {
+    //       token: fcmToken,
+    //       notification: {
+    //         title: 'Bin Alert',
+    //         body: `Attention!: Bin: "${binName?.bin_name}" is ${payload.record?.fill_level}% full.`,
+    //       },
+    //     },
+    //   }),
+    // });
+    
+    // // Check response status
+    // const resData = await response.json();
+    // if (response.status < 200 || response.status >= 300) {
+    //   throw resData;
+    // }
+    // }
+
+
     const response = await fetch(`https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`, {
       method: 'POST',
       headers: {
@@ -65,7 +90,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         message: {
-          token: fcmToken,
+          token: tokensData?.[0]?.fcm_token,
           notification: {
             title: 'Bin Alert',
             body: `Attention!: Bin: "${binName?.bin_name}" is ${payload.record?.fill_level}% full.`,
@@ -78,7 +103,6 @@ Deno.serve(async (req) => {
     const resData = await response.json();
     if (response.status < 200 || response.status >= 300) {
       throw resData;
-    }
     }
     return new Response(
       JSON.stringify({ message: "Notification sent successfully" }),

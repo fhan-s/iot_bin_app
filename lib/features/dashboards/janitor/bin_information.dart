@@ -81,7 +81,7 @@ class _BinInformationPageState extends State<BinInformationPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Fill Level: $binFillLevel',
+                  'Fill Level: $binFillLevel%',
                   style: const TextStyle(fontSize: 18),
                 ),
                 const SizedBox(height: 8),

@@ -29,13 +29,6 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
         .toList();
   }
 
-  // Future<int> countBins(String janitorId) async {
-  //   final countResponse = await supabase
-  //       .from('bin_assignment')
-  //       .select('bin_id', const FetchOptions(count: CountOption.exact))
-  //       .eq('janitor_id', janitorId);
-  //   return countResponse.count ?? 0;
-  // }
   Future<void> loadBins() async {
     final loadedBins = await getBins();
 
@@ -129,8 +122,8 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                 padding: const EdgeInsets.all(8),
                 children: [
                   BinCard(
-                    title: 'Total Bins',
-                    value: 'n/a',
+                    title: 'My Total Bins',
+                    value: bins.length.toString(),
                     icon: Icons.delete,
                   ),
                   BinCard(

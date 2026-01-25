@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:iot_bin_app/features/analytics/janitor/analytic_page.dart';
-import 'package:iot_bin_app/features/dashboards/janitor/map_page.dart';
+import 'package:iot_bin_app/features/maps/map_page.dart';
 import 'package:iot_bin_app/features/dashboards/janitor/dashboard_bins.dart';
 import 'package:iot_bin_app/features/profile/profile_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
