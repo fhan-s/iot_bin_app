@@ -1,29 +1,83 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'app_colours.dart';
 
-class AppTheme {
-  static final lightThemeMode = ThemeData.light().copyWith(
-    scaffoldBackgroundColor: const Color.fromARGB(255, 235, 235, 235),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Color.fromARGB(255, 33, 33, 33),
-      foregroundColor: Colors.white,
-    ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Color.fromARGB(255, 33, 33, 33),
-      selectedItemColor: Colors.white,
-      unselectedItemColor: Colors.grey,
-    ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: Color.fromARGB(255, 33, 33, 33),
-      foregroundColor: Colors.white,
-    ),
-  );
-  static final titleText = GoogleFonts.nunito(
-    fontSize: 20,
-    fontWeight: FontWeight.w300,
-    color: Colors.white,
-  );
-  // static final darkThemeMode = ThemeData.dark().copyWith(
-  //   scaffoldBackgroundColor: AppColourPalette.backgroundColor,
-  // );
+class MyAppTheme {
+  static ThemeData lightThemeMode() {
+    final scheme = ColorScheme.fromSeed(
+      seedColor: MyAppColors.seed,
+      brightness: Brightness.light,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      textTheme: GoogleFonts.nunitoTextTheme(),
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.surface,
+        foregroundColor: scheme.onSurface,
+        centerTitle: true,
+        elevation: 0,
+      ),
+      scaffoldBackgroundColor: scheme.surface,
+      cardTheme: CardThemeData(
+        color: scheme.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: scheme.surface,
+        selectedItemColor: scheme.primary,
+        unselectedItemColor: scheme.onSurfaceVariant,
+        showUnselectedLabels: true,
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  static ThemeData darkThemeMode() {
+    final scheme = ColorScheme.fromSeed(
+      seedColor: MyAppColors.seed,
+      brightness: Brightness.dark,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      textTheme: GoogleFonts.nunitoTextTheme(
+        ThemeData(brightness: Brightness.dark).textTheme,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.surface,
+        foregroundColor: scheme.onSurface,
+        centerTitle: true,
+        elevation: 0,
+      ),
+      scaffoldBackgroundColor: scheme.surface,
+      cardTheme: CardThemeData(
+        color: scheme.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: scheme.surface,
+        selectedItemColor: scheme.primary,
+        unselectedItemColor: scheme.onSurfaceVariant,
+        showUnselectedLabels: true,
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
 }

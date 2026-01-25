@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
       // remove debug banner
       debugShowCheckedModeBanner: false,
       title: 'Bin IoT App',
-      theme: AppTheme.lightThemeMode,
+      theme: MyAppTheme.lightThemeMode(),
       home: const AuthGate(),
     );
   }

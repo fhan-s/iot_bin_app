@@ -9,73 +9,78 @@ class ChangePasswordPage extends StatefulWidget {
 }
 
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
-  final _newpasswordController = TextEditingController();
-  final _confirmpasswordController = TextEditingController();
+  final newpasswordController = TextEditingController();
+  final confirmpasswordController = TextEditingController();
   bool obscureNewPasswordText = true;
   bool obscureConfirmPasswordText = true;
+  bool isLoading = false;
+
   Future<void> changePassword() async {
-    final newPassword = _newpasswordController.text.trim();
-    final confirmPassword = _confirmpasswordController.text.trim();
+    if (isLoading) return;
+
+    setState(() {
+      isLoading = true;
+    });
+    final newPassword = newpasswordController.text.trim();
+    final confirmPassword = confirmpasswordController.text.trim();
     final supabase = Supabase.instance.client;
+
+    FocusScope.of(context).unfocus(); // Dismiss keyboard
 
     try {
       if (newPassword.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password cannot be empty')),
-        );
-        return;
-      }
-      if (newPassword.length < 6) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password must be at least 6 characters long'),
-          ),
-        );
-        return;
-      }
-      if (!RegExp(r'[A-Z]').hasMatch(newPassword)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Password must contain at least one uppercase letter',
-            ),
-          ),
-        );
+        password_message('Password cannot be empty');
         return;
       }
       if (newPassword != confirmPassword) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+        password_message('Passwords do not match');
+        return;
+      }
+      if (newPassword.length < 6) {
+        password_message('Password must be at least 6 characters long');
+        return;
+      }
+      if (!RegExp(r'[A-Z]').hasMatch(newPassword)) {
+        password_message('Password must contain at least one uppercase letter');
         return;
       }
 
       await supabase.auth.updateUser(UserAttributes(password: newPassword));
       // Call Supabase or relevant service to change password
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password changed successfully')),
-      );
+      password_message('Password changed successfully');
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Password change failed: $e')));
+      password_message('Password change failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
+  }
+
+  void password_message(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   void dispose() {
     // Dispose controllers to prevent memory leaks
-    _newpasswordController.dispose();
-    _confirmpasswordController.dispose();
+    newpasswordController.dispose();
+    confirmpasswordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final colourScheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: colourScheme.surfaceContainerHighest,
       appBar: AppBar(title: const Text('Bin IoT App')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -86,11 +91,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               'Reset Password',
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 10),
             TextField(
-              controller: _newpasswordController,
+              controller: newpasswordController,
               obscureText: obscureNewPasswordText,
+              textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 labelText: 'New Password',
+                prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
                   icon: Icon(
                     obscureNewPasswordText
@@ -105,11 +113,19 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 20),
             TextField(
-              controller: _confirmpasswordController,
+              controller: confirmpasswordController,
               obscureText: obscureConfirmPasswordText,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) {
+                if (!isLoading) {
+                  changePassword();
+                }
+              },
               decoration: InputDecoration(
                 labelText: 'Confirm Password',
+                prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
                   icon: Icon(
                     obscureConfirmPasswordText
@@ -125,16 +141,32 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               ),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: changePassword,
-              child: const Text('Change Password'),
+            // Buttons
+            FilledButton(
+              onPressed: isLoading ? null : changePassword,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Change Password'),
+              ),
             ),
+            const SizedBox(height: 10),
             //cancel button
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () {
+                      Navigator.of(context).pop();
+                    },
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text('Cancel'),
+              ),
             ),
           ],
         ),

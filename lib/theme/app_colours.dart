@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
-class AppColourPalette {
+class MyAppColors {
+  static const seed = Color.fromARGB(255, 0, 107, 9);
+  static const Color success = Color(0xFF2E7D32);
+  static const Color warning = Color(0xFFF9A825);
+  static const Color danger = Color(0xFFC62828);
   static const appBackground = Color.fromRGBO(68, 46, 46, 1);
   static const primaryColor = Color.fromRGBO(34, 34, 34, 1);
   static const textLightColor = Color.fromRGBO(255, 255, 255, 1);
