@@ -5,7 +5,6 @@ import 'package:iot_bin_app/features/dashboards/janitor/dashboard_bins.dart';
 import 'package:iot_bin_app/features/profile/profile_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'dart:async';
 
 class JanitorDashboardPage extends StatefulWidget {
   const JanitorDashboardPage({super.key});
@@ -16,10 +15,12 @@ class JanitorDashboardPage extends StatefulWidget {
 
 class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
   final supabase = Supabase.instance.client;
+  int selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
+
     // Set up FCM token registration and listener for auth state changes
     if (supabase.auth.currentUser != null) {
       supabase.auth.onAuthStateChange.listen((event) async {
@@ -65,8 +66,6 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
     super.dispose();
   }
 
-  int selectedIndex = 0;
-
   Widget getSelectedPage() {
     switch (selectedIndex) {
       case 0:
@@ -95,10 +94,13 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colourScheme = Theme.of(context).colorScheme;
     return Scaffold(
       // app bar with title and profile button
+      backgroundColor: colourScheme.surfaceContainerHighest,
       appBar: AppBar(
         title: Text(getTitle()),
+        centerTitle: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
@@ -112,7 +114,11 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
           ),
         ],
       ),
-      body: getSelectedPage(),
+
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        child: getSelectedPage(),
+      ),
       // bottom navigation bar to switch between pages
       bottomNavigationBar: BottomNavigationBar(
         // uses the first index (0) as the default selected page

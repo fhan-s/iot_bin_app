@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 class SectionTitle extends StatelessWidget {
-  const SectionTitle(this.text);
+  const SectionTitle(this.text, {super.key});
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final titleColourScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Text(
@@ -14,7 +14,7 @@ class SectionTitle extends StatelessWidget {
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w800,
-          color: cs.onSurface,
+          color: titleColourScheme.onSurface,
         ),
       ),
     );

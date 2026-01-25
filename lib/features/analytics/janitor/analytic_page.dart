@@ -33,7 +33,7 @@ class _JanitorAnalyticPageState extends State<JanitorAnalyticPage> {
     return binGraphData.getFullCountsPerBin(janitorId: userId, since: since);
   }
 
-  void _changeDays(int newDays) {
+  void changeDays(int newDays) {
     setState(() {
       days = newDays;
       futureCounts = loadBins();
@@ -42,24 +42,47 @@ class _JanitorAnalyticPageState extends State<JanitorAnalyticPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: colorScheme.surfaceContainerHighest,
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Row(
               children: [
-                const Text('Time range: '),
+                Text(
+                  'Time range: ',
+                  style: TextStyle(color: colorScheme.onSurface),
+                ),
                 const SizedBox(width: 8),
                 DropdownButton<int>(
                   value: days,
-                  items: const [
-                    DropdownMenuItem(value: 1, child: Text('Last 24 hours')),
-                    DropdownMenuItem(value: 7, child: Text('Last 7 days')),
-                    DropdownMenuItem(value: 30, child: Text('Last 30 days')),
+                  items: [
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text(
+                        'Last 24 hours',
+                        style: TextStyle(color: colorScheme.onSurface),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: 7,
+                      child: Text(
+                        'Last 7 days',
+                        style: TextStyle(color: colorScheme.onSurface),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: 30,
+                      child: Text(
+                        'Last 30 days',
+                        style: TextStyle(color: colorScheme.onSurface),
+                      ),
+                    ),
                   ],
                   onChanged: (newDays) {
-                    if (newDays != null) _changeDays(newDays);
+                    if (newDays != null) changeDays(newDays);
                   },
                 ),
               ],

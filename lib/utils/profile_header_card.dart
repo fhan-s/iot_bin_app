@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class ProfileHeaderCard extends StatelessWidget {
   const ProfileHeaderCard({
+    super.key,
     required this.initials,
     required this.fullName,
     required this.email,
@@ -15,24 +16,24 @@ class ProfileHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final headerColourScheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cs.surface,
+        color: headerColourScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundColor: cs.primary.withOpacity(0.15),
+            backgroundColor: headerColourScheme.primary.withOpacity(0.15),
             child: Text(
               initials,
               style: TextStyle(
                 fontWeight: FontWeight.w800,
-                color: cs.primary,
+                color: headerColourScheme.primary,
                 fontSize: 18,
               ),
             ),
@@ -56,7 +57,7 @@ class ProfileHeaderCard extends StatelessWidget {
                   email,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: cs.onSurfaceVariant),
+                  style: TextStyle(color: headerColourScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 10),
                 Align(
@@ -67,14 +68,14 @@ class ProfileHeaderCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: cs.primary.withOpacity(0.10),
+                      color: headerColourScheme.primary.withOpacity(0.10),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
                       role,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: cs.primary,
+                        color: headerColourScheme.primary,
                       ),
                     ),
                   ),
@@ -85,7 +86,7 @@ class ProfileHeaderCard extends StatelessWidget {
           IconButton(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Edit profile coming soon')),
+                const SnackBar(content: Text('Edit profile tapped')),
               );
             },
             icon: const Icon(Icons.edit_outlined),

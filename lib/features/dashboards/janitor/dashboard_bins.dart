@@ -107,132 +107,186 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
 
   @override
   Widget build(BuildContext context) {
+    final colourScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      body: Column(
-        children: [
-          //4 boxes representing janitor bins
-          Expanded(
-            flex: 2,
-            child: SizedBox(
-              width: double.infinity,
-              child: GridView.count(
-                crossAxisCount: 2,
-                childAspectRatio: 1.2,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(8),
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  BinCard(
-                    title: 'My Total Bins',
-                    value: bins.length.toString(),
-                    icon: Icons.delete,
+                  Text(
+                    'Overview',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  BinCard(
-                    title: 'Bins Needing Attention',
-                    value: 'n/a',
-                    icon: Icons.warning,
+                  const SizedBox(height: 6),
+                ],
+              ),
+            ),
+          ),
+          //4 boxes representing janitor bins
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            sliver: SliverGrid(
+              delegate: SliverChildListDelegate.fixed([
+                BinCard(
+                  title: 'My Total Bins',
+                  value: bins.length.toString(),
+                  icon: Icons.delete,
+                ),
+                BinCard(
+                  title: 'Bins Needing Attention',
+                  value: 'n/a',
+                  icon: Icons.warning,
+                ),
+                BinCard(
+                  title: 'Bins emptied Today',
+                  value: 'n/a',
+                  icon: Icons.check_circle,
+                ),
+                BinCard(
+                  title: 'Average response time',
+                  value: 'n/a',
+                  icon: Icons.bar_chart,
+                ),
+              ]),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 1.25,
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'My Bins',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  BinCard(
-                    title: 'Bins emptied Today',
-                    value: 'n/a',
-                    icon: Icons.check_circle,
-                  ),
-                  BinCard(
-                    title: 'Average response time',
-                    value: 'n/a',
-                    icon: Icons.bar_chart,
+                  const Spacer(),
+                  IconButton(
+                    tooltip: 'Refresh',
+                    onPressed: () {
+                      loadBins();
+                    },
+                    icon: const Icon(Icons.refresh),
                   ),
                 ],
               ),
             ),
           ),
-          // Container(
-          //   padding: const EdgeInsets.all(8.0),
-          //   color: const Color.fromARGB(255, 141, 131, 196),
-          //   child: Column(
-          //     children: [
-          //       const Align(
-          //         alignment: Alignment.centerLeft,
-          //         child: Text(
-          //           'My Bins',
-          //           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          //         ),
-          //       ),
-          //       const SizedBox(height: 8),
-          //       SearchBar(hintText: 'Search Bins'),
-          //     ],
-          //   ),
-          // ),
-
           //tiles for each bin with status info
-          Expanded(
-            flex: 1,
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: getBins(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  print(snapshot.error);
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No bins found.'));
-                }
-                final bins = snapshot.data!;
-
-                // sort bins in descending fill level
-                bins.sort((a, b) {
-                  final fillA = (a['fill_level'] ?? 0) as int;
-                  final fillB = (b['fill_level'] ?? 0) as int;
-                  return fillB.compareTo(fillA);
-                });
-                return ListView.builder(
-                  itemCount: bins.length,
-                  itemBuilder: (context, index) {
-                    final bin = bins[index];
-
-                    return Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.grey.shade400,
-                          width: 1.5,
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            sliver: SliverToBoxAdapter(
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: getBins(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (snapshot.hasError) {
+                    print(snapshot.error);
+                    return Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Center(
+                        child: Text(
+                          'Error loading bins: ${snapshot.error}',
+                          style: const TextStyle(color: Colors.red),
                         ),
-                      ),
-                      child: ListTile(
-                        leading: const Icon(Icons.delete),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Bin name: ${bin['bin_name']}'),
-                            Text('Status: ${bin['bin_status']}'),
-                            const SizedBox(height: 4),
-                            FillLevelCardIcon(
-                              fillLevel: bin['fill_level'] ?? 0,
-                            ),
-                          ],
-                        ),
-                        isThreeLine: true,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BinInformationPage(
-                                binId: bin['bin_id'].toString(),
-                              ),
-                            ),
-                          );
-                        },
                       ),
                     );
-                  },
-                );
-              },
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 20.0),
+                      child: Center(child: Text('No bins found.')),
+                    );
+                  }
+                  final bins = snapshot.data!;
+
+                  // sort bins in descending fill level
+                  bins.sort((a, b) {
+                    final fillA = (a['fill_level'] ?? 0) as int;
+                    final fillB = (b['fill_level'] ?? 0) as int;
+                    return fillB.compareTo(fillA);
+                  });
+
+                  return Column(
+                    children: List.generate(bins.length, (index) {
+                      final bin = bins[index];
+
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 7),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: colourScheme.outlineVariant),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          leading: CircleAvatar(
+                            backgroundColor: colourScheme.primary,
+                            child: Icon(
+                              Icons.delete,
+                              color: colourScheme.onPrimary,
+                            ),
+                          ),
+                          title: Text(
+                            bin['bin_name'] ?? 'Unnamed Bin',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Status: ${bin['bin_status']}'),
+                                const SizedBox(height: 4),
+                                FillLevelCardIcon(
+                                  fillLevel: bin['fill_level'] ?? 0,
+                                ),
+                              ],
+                            ),
+                          ),
+                          trailing: const Icon(Icons.arrow_forward_ios),
+                          isThreeLine: true,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BinInformationPage(
+                                  binId: bin['bin_id'].toString(),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    }),
+                  );
+                },
+              ),
             ),
           ),
         ],

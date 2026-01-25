@@ -175,14 +175,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
 
               const SizedBox(height: 20),
-              Center(
-                child: Text(
-                  'Bin IoT App',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colourScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
             ],
           );
         },

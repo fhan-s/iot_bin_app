@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 class ProfileItem extends StatelessWidget {
   const ProfileItem({
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -19,7 +20,7 @@ class ProfileItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final itemColourScheme = Theme.of(context).colorScheme;
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -32,10 +33,12 @@ class ProfileItem extends StatelessWidget {
               height: 40,
               width: 40,
               decoration: BoxDecoration(
-                color: (iconColor ?? cs.primary).withOpacity(0.12),
+                color: (iconColor ?? itemColourScheme.primary).withOpacity(
+                  0.12,
+                ),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: iconColor ?? cs.primary),
+              child: Icon(icon, color: iconColor ?? itemColourScheme.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -47,15 +50,19 @@ class ProfileItem extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: titleColor ?? cs.onSurface,
+                      color: titleColor ?? itemColourScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: TextStyle(color: cs.onSurfaceVariant)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: itemColourScheme.onSurfaceVariant),
+                  ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+            // arrow icon
+            Icon(Icons.chevron_right, color: itemColourScheme.onSurfaceVariant),
           ],
         ),
       ),
