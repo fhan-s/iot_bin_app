@@ -22,6 +22,7 @@ class ProfileItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final itemColourScheme = Theme.of(context).colorScheme;
 
+    // Profile item with icon, title, subtitle and arrow
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: onTap,

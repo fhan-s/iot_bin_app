@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
   try {
     const payload: SupabaseWebhookPayload = await req.json();
 
+    // get bin name from bin table
     const {data: binName, error: binError} = await supabase.from('bin').select('bin_name').eq('bin_id', payload.record?.bin_id).single();
     if (binError) throw binError;
 

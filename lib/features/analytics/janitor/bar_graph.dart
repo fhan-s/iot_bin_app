@@ -12,15 +12,14 @@ class MyBarChart extends StatelessWidget {
       return const Center(child: Text('No data in this time range.'));
     }
 
-    // Sort bar chart by highest first
+    // Sort by highest first
     final entries = counts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    // Find max Y value for chart scaling
-    final maxY =
-        (entries.map((e) => e.value).fold<int>(0, (m, v) => v > m ? v : m))
-            .toDouble();
+    // Use the highest value for chart scaling
+    final maxY = entries.isEmpty ? 0.0 : entries.first.value.toDouble();
 
+    // add x axis and y axis titles
     return BarChart(
       BarChartData(
         maxY: (maxY == 0) ? 1 : maxY + 1,

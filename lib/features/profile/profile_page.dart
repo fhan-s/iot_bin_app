@@ -99,7 +99,7 @@ class _ProfilePageState extends State<ProfilePage> {
           final role = (userData['role'] as String?)?.trim() ?? 'No Role';
           final email = (userData['email'] as String?)?.trim() ?? 'No Email';
 
-          final initials = _initials(fullName);
+          final initials = userInitials(fullName);
 
           return ListView(
             padding: EdgeInsets.fromLTRB(
@@ -182,7 +182,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  String _initials(String name) {
+  String userInitials(String name) {
     final parts = name
         .split(RegExp(r'\s+'))
         .where((p) => p.isNotEmpty)

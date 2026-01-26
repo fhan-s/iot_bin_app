@@ -22,31 +22,37 @@ class BinCard extends StatelessWidget {
         side: BorderSide(color: colorScheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(13.0),
+        padding: const EdgeInsets.all(1.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: colorScheme.secondaryContainer,
-              child: Icon(icon, color: colorScheme.onSecondaryContainer),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 6),
+            // CircleAvatar(
+            //   radius: 12,
+            //   backgroundColor: colorScheme.secondaryContainer,
+            //   child: Icon(
+            //     icon,
+            //     color: colorScheme.onSecondaryContainer,
+            //     size: 16,
+            //   ),
+            // ),
+            const SizedBox(height: 1),
             Text(
               title,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
             ),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 1),
           ],
         ),
       ),

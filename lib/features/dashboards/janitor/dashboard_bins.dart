@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/utils/bin_card.dart';
+import 'package:iot_bin_app/features/dashboards/janitor/widgets/bin_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:iot_bin_app/features/dashboards/janitor/bin_information.dart';
-import 'package:iot_bin_app/utils/fill_level_card_icon.dart';
+import 'package:iot_bin_app/features/dashboards/janitor/widgets/fill_level_card_icon.dart';
 
 class JanitorDashboardBinsPage extends StatefulWidget {
   const JanitorDashboardBinsPage({super.key});
@@ -108,12 +108,17 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
   @override
   Widget build(BuildContext context) {
     final colourScheme = Theme.of(context).colorScheme;
+    final numBins = bins.length.toString();
+    final numBinsNeedingAttention = bins
+        .where((bin) => bin['bin_status'] == 'Full')
+        .length
+        .toString();
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+              padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -128,25 +133,19 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
               ),
             ),
           ),
-          //4 boxes representing janitor bins
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             sliver: SliverGrid(
               delegate: SliverChildListDelegate.fixed([
                 BinCard(
                   title: 'My Total Bins',
-                  value: bins.length.toString(),
+                  value: numBins,
                   icon: Icons.delete,
                 ),
                 BinCard(
                   title: 'Bins Needing Attention',
-                  value: 'n/a',
+                  value: numBinsNeedingAttention,
                   icon: Icons.warning,
-                ),
-                BinCard(
-                  title: 'Bins emptied Today',
-                  value: 'n/a',
-                  icon: Icons.check_circle,
                 ),
                 BinCard(
                   title: 'Average response time',
@@ -155,7 +154,7 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                 ),
               ]),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
+                crossAxisCount: 3,
                 mainAxisSpacing: 10,
                 crossAxisSpacing: 10,
                 childAspectRatio: 1.25,
@@ -175,12 +174,37 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                     ),
                   ),
                   const Spacer(),
-                  IconButton(
-                    tooltip: 'Refresh',
-                    onPressed: () {
-                      loadBins();
-                    },
-                    icon: const Icon(Icons.refresh),
+                  Container(
+                    padding: const EdgeInsets.only(left: 16),
+                    decoration: BoxDecoration(
+                      color: colourScheme.primary,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        loadBins();
+                      },
+                      child: Row(
+                        children: [
+                          Text(
+                            'Update Bins',
+                            style: TextStyle(color: colourScheme.onPrimary),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            tooltip: 'Refresh',
+                            padding: EdgeInsets.all(0),
+                            onPressed: () {
+                              loadBins();
+                            },
+                            icon: Icon(
+                              Icons.refresh,
+                              color: colourScheme.onPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),

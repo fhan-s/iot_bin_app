@@ -25,8 +25,7 @@ class BinFillIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fillPercent = (fillLevel / 100).clamp(0.0, 1.0);
-
+    final double fillPercent = (fillLevel / 100).clamp(0.0, 1.0);
     return ShaderMask(
       blendMode: BlendMode.srcIn,
       shaderCallback: (Rect bounds) {
