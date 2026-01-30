@@ -115,17 +115,17 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    attemptLogin();
-                  },
-                  child: const Text('Forgot Password?'),
-                ),
-              ],
-            ),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.end,
+            //   children: [
+            //     TextButton(
+            //       onPressed: () {
+            //         // attemptLogin();
+            //       },
+            //       child: const Text('Forgot Password?'),
+            //     ),
+            //   ],
+            // ),
             // Login button
             FilledButton(
               onPressed: isLoading ? null : attemptLogin,

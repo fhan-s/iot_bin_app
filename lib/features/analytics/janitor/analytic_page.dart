@@ -99,7 +99,41 @@ class _JanitorAnalyticPageState extends State<JanitorAnalyticPage> {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   }
                   final counts = snapshot.data ?? {};
-                  return MyBarChart(counts: counts);
+                  return Column(
+                    children: [
+                      Text(
+                        'Bar Chart of Bins Full Frequency',
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Frequency of Bin being Full',
+                          style: TextStyle(
+                            color: colorScheme.onSurface,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(child: MyBarChart(counts: counts)),
+                      Text(
+                        'Bin names',
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  );
                 },
               ),
             ),

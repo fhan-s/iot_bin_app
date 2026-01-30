@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:iot_bin_app/features/profile/change_password_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:iot_bin_app/utils/profile_section_card.dart';
-import 'package:iot_bin_app/utils/profile_header_card.dart';
-import 'package:iot_bin_app/utils/profile_item.dart';
-import 'package:iot_bin_app/utils/profile_section_title.dart';
+import 'package:iot_bin_app/features/profile/widgets/profile_section_card.dart';
+import 'package:iot_bin_app/features/profile/widgets/profile_header_card.dart';
+import 'package:iot_bin_app/features/profile/widgets/profile_item.dart';
+import 'package:iot_bin_app/features/profile/widgets/profile_section_title.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});

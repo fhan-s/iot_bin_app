@@ -2,6 +2,7 @@ import 'package:envied/envied.dart';
 // Rebuild trigger
 part 'env.g.dart';
 
+/// Environment configuration using Envied package
 @Envied(path: '.env')
 abstract class Env {
   @EnviedField(varName: 'SUPABASE_URL', obfuscate: true)

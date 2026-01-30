@@ -34,19 +34,27 @@ Deno.serve(async (req) => {
     const payload: SupabaseWebhookPayload = await req.json();
 
     // get bin name from bin table
-    const {data: binName, error: binError} = await supabase.from('bin').select('bin_name').eq('bin_id', payload.record?.bin_id).single();
+    const {data: binName, error: binError} = await supabase
+    .from('bin')
+    .select('bin_name')
+    .eq('bin_id', payload.record?.bin_id)
+    .single();
     if (binError) throw binError;
 
     // find janitor assigned to this full bin in bin_assignment table
-    const {data: assignments, error: assignmentError} = await supabase.from('bin_assignment')
-      .select('janitor_id')
-      .eq('bin_id', payload.record?.bin_id).single();
+    const {data: assignments, error: assignmentError} = await supabase
+    .from('bin_assignment')
+    .select('janitor_id')
+    .eq('bin_id', payload.record?.bin_id)
+    .single();
     if (assignmentError) throw assignmentError;
 
     // get all fcm tokens for the janitor
-    const {data: tokensData, error: tokensError} = await supabase.from('fcm_push_token')
-      .select('user_id, fcm_token')
-      .eq ('user_id', assignments?.janitor_id);
+    const {data: tokensData, error: tokensError} = await supabase
+    .from('fcm_push_token')
+    .select('user_id, fcm_token')
+    .eq ('user_id', assignments?.janitor_id);
+
     if (tokensError) throw tokensError;
   
 
@@ -56,7 +64,7 @@ Deno.serve(async (req) => {
       privateKey: serviceAccount.private_key,
     });
 
-    // send notification to each token
+    // send notification to each token that belongs to the janitor
     // for (const fcmToken of tokensData?.map(t => t.fcm_token) ?? []) {
     // const response = await fetch(`https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`, {
     //   method: 'POST',
@@ -83,6 +91,7 @@ Deno.serve(async (req) => {
     // }
 
 
+    // send notification to the first token (for testing purposes)
     const response = await fetch(`https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`, {
       method: 'POST',
       headers: {
@@ -118,7 +127,7 @@ Deno.serve(async (req) => {
   }
 })
 
-// Function to get OAuth2 access token using JWT
+// Function to get access token for Firebase Cloud Messaging
 const getAccessToken = ({
   clientEmail,
   privateKey,
