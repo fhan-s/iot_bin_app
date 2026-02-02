@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/features/authentication/auth_gate.dart';
+import 'package:iot_bin_app/features/authentication/auth_gateway.dart';
 import 'package:iot_bin_app/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';

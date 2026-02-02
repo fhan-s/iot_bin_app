@@ -65,7 +65,7 @@ class _LoginPageState extends State<LoginPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Bin IoT App',
+              'Bin Monitoring App',
               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             ),
             Icon(

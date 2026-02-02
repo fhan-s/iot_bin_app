@@ -18,7 +18,7 @@ type SupabaseWebhookPayload = {
 };
 
 
-// Create a single supabase client for interacting with database
+// Initialize Supabase client with service role key
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,

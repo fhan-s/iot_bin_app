@@ -46,14 +46,14 @@ class AuthGate extends StatelessWidget {
                 final role = roleSnapshot.data;
                 // Navigate based on user role
                 if (role == "manager") {
-                  debugPrint("<LOGIN OK---------: $role");
+                  debugPrint("<LOGIN OK: $role");
                   return const ManagerDashboardPage();
                 } else if (role == "janitor") {
-                  debugPrint("<LOGIN OK---------: $role");
+                  debugPrint("<LOGIN OK: $role");
                   return const JanitorDashboardPage();
                 } else {
                   // Unknown role or no role assigned
-                  debugPrint("LOGIN FAILED------: $role");
+                  debugPrint("LOGIN FAILED: $role");
                   return const LoginPage();
                 }
               },
@@ -63,7 +63,7 @@ class AuthGate extends StatelessWidget {
             return const LoginPage();
           }
         } catch (e) {
-          debugPrint("LOGIN FAILED-------: $e");
+          debugPrint("LOGIN FAILED: $e");
           // In case of any error, redirect to login page
           return const LoginPage();
         }

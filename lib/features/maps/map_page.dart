@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/features/maps/widgets/bin_icon_map.dart';
 import 'package:iot_bin_app/features/maps/widgets/bin_marker.dart';
 import 'package:iot_bin_app/features/maps/widgets/create_grid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -152,17 +151,17 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                             ),
                           ),
                           // Bin icons
-                          for (final bin in bins)
-                            Positioned(
-                              left: (w * bin.x) - 16,
-                              top: (h * bin.y) - 16,
-                              child: BinIconMapDot(
-                                fillColor: getFillColor(bin.fill),
-                                isSelected: selectedBinId == bin.id,
-                                label: bin.id,
-                                onTap: () => _showBinDetails(bin),
-                              ),
-                            ),
+                          // for (final bin in bins)
+                          // Positioned(
+                          //   left: (w * bin.x) - 16,
+                          //   top: (h * bin.y) - 16,
+                          //   child: BinIconMapDot(
+                          //     fillColor: getFillColor(bin.fill),
+                          //     isSelected: selectedBinId == bin.id,
+                          //     label: bin.id,
+                          //     onTap: () => _showBinDetails(bin),
+                          //   ),
+                          // ),
                         ],
                       );
                     },
