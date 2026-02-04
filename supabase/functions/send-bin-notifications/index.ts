@@ -2,12 +2,14 @@ import { createClient } from "@supabase/supabase-js"
 import { JWT } from "google-auth-library";
 console.log("Supabase Functions send-bin-notifications function loaded");
 
+// defines the structure of the notification payload from Supabase
 interface NotifcationWebhookPayload {
     created_at?: string
     bin_id?: string
     status?: string
     fill_level?: number
 }
+// defines the structure of the Supabase webhook payload
 type SupabaseWebhookPayload = {
   type?: 'Insert';
   table?: string;
