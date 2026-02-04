@@ -25,36 +25,36 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     final confirmPassword = confirmpasswordController.text.trim();
     final supabase = Supabase.instance.client;
 
-    FocusScope.of(context).unfocus(); // Dismiss keyboard
+    FocusScope.of(context).unfocus(); // Dismiss keyboard if open
 
     try {
       if (newPassword.isEmpty) {
-        password_message('Password cannot be empty');
+        passwordMessage('Password cannot be empty');
         return;
       }
       if (newPassword != confirmPassword) {
-        password_message('Passwords do not match');
+        passwordMessage('Passwords do not match');
         return;
       }
       if (newPassword.length < 6) {
-        password_message('Password must be at least 6 characters long');
+        passwordMessage('Password must be at least 6 characters long');
         return;
       }
       if (!RegExp(r'[A-Z]').hasMatch(newPassword)) {
-        password_message('Password must contain at least one uppercase letter');
+        passwordMessage('Password must contain at least one uppercase letter');
         return;
       }
 
       await supabase.auth.updateUser(UserAttributes(password: newPassword));
-      // Call Supabase or relevant service to change password
       if (!mounted) return;
-      password_message('Password changed successfully');
+      passwordMessage('Password changed successfully');
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      password_message('Password change failed: $e');
+      passwordMessage('Password change failed: $e');
     } finally {
       if (mounted) {
+        // state is updated only if the widget is still mounted
         setState(() {
           isLoading = false;
         });
@@ -62,7 +62,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     }
   }
 
-  void password_message(String message) {
+  void passwordMessage(String message) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
@@ -78,9 +78,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colourScheme = Theme.of(context).colorScheme;
+    final appColourScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colourScheme.surfaceContainerHighest,
+      backgroundColor: appColourScheme.surfaceContainerHighest,
       appBar: AppBar(title: const Text('Bin IoT App')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

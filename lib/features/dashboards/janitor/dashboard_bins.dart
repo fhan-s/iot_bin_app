@@ -107,7 +107,7 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
 
   @override
   Widget build(BuildContext context) {
-    final colourScheme = Theme.of(context).colorScheme;
+    final appColourScheme = Theme.of(context).colorScheme;
     final numBins = bins.length.toString();
     final numBinsNeedingAttention = bins
         .where((bin) => bin['bin_status'] == 'Full')
@@ -177,7 +177,7 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                   Container(
                     padding: const EdgeInsets.only(left: 16),
                     decoration: BoxDecoration(
-                      color: colourScheme.primary,
+                      color: appColourScheme.primary,
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: GestureDetector(
@@ -188,7 +188,7 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                         children: [
                           Text(
                             'Update Bins',
-                            style: TextStyle(color: colourScheme.onPrimary),
+                            style: TextStyle(color: appColourScheme.onPrimary),
                           ),
                           const SizedBox(width: 4),
                           IconButton(
@@ -199,7 +199,7 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                             },
                             icon: Icon(
                               Icons.refresh,
-                              color: colourScheme.onPrimary,
+                              color: appColourScheme.onPrimary,
                             ),
                           ),
                         ],
@@ -259,7 +259,9 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: colourScheme.outlineVariant),
+                          side: BorderSide(
+                            color: appColourScheme.outlineVariant,
+                          ),
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(
@@ -267,10 +269,10 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                             vertical: 10,
                           ),
                           leading: CircleAvatar(
-                            backgroundColor: colourScheme.primary,
+                            backgroundColor: appColourScheme.primary,
                             child: Icon(
                               Icons.delete,
-                              color: colourScheme.onPrimary,
+                              color: appColourScheme.onPrimary,
                             ),
                           ),
                           title: Text(

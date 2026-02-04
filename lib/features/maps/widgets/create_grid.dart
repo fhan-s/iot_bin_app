@@ -4,12 +4,14 @@ class CreateMapGrid extends CustomPainter {
   final Color lineColor;
   const CreateMapGrid({required this.lineColor});
 
+  // draws a grid on the canvas
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = lineColor.withOpacity(0.6)
       ..strokeWidth = 1;
 
+    // draw vertical and horizontal lines every 28 pixels
     const step = 28.0;
     for (double x = 0; x <= size.width; x += step) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);

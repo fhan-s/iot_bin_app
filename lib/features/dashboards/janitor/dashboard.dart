@@ -21,7 +21,6 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
   void initState() {
     super.initState();
 
-    // Set up FCM token registration and listener for auth state changes
     if (supabase.auth.currentUser != null) {
       supabase.auth.onAuthStateChange.listen((event) async {
         // when user signs in, request FCM notification permission and get token
@@ -29,16 +28,18 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
           await FirebaseMessaging.instance.requestPermission();
           final fcmToken = await FirebaseMessaging.instance.getToken();
           if (fcmToken != null) {
+            // Store the FCM token in the database
             await setFcmToken(fcmToken);
           }
         }
       });
     }
-    // Listen for FCM token refreshes
+    // listens for FCM token refreshes
     FirebaseMessaging.instance.onTokenRefresh.listen((fcmtoken) async {
+      // Update the stored FCM token in the database
       await setFcmToken(fcmtoken);
     });
-    // Listen for incoming messages while the app is in the foreground
+    // listens for incoming messages while the app is in the foreground
     FirebaseMessaging.onMessage.listen((payload) {
       final notification = payload.notification;
       if (notification != null) {
@@ -94,10 +95,10 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colourScheme = Theme.of(context).colorScheme;
+    final appColourScheme = Theme.of(context).colorScheme;
     return Scaffold(
       // app bar with title and profile button
-      backgroundColor: colourScheme.surfaceContainerHighest,
+      backgroundColor: appColourScheme.surfaceContainerHighest,
       appBar: AppBar(
         title: Text(getTitle()),
         centerTitle: false,

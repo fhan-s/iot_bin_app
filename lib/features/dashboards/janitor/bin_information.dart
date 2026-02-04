@@ -44,7 +44,6 @@ class _BinInformationPageState extends State<BinInformationPage> {
           if (!snapshot.hasData || snapshot.data == null) {
             return const Center(child: Text('No data found'));
           }
-
           final binInfo = snapshot.data!;
           final binName = binInfo['bin_name'];
           final binStatus = binInfo['bin_status'];
