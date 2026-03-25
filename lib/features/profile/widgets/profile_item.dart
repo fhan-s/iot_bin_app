@@ -34,8 +34,8 @@ class ProfileItem extends StatelessWidget {
               height: 40,
               width: 40,
               decoration: BoxDecoration(
-                color: (iconColor ?? itemColourScheme.primary).withOpacity(
-                  0.12,
+                color: (iconColor ?? itemColourScheme.primary).withValues(
+                  alpha: 0.12,
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),

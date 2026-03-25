@@ -8,7 +8,7 @@ class CreateMapGrid extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = lineColor.withOpacity(0.6)
+      ..color = lineColor.withValues(alpha: 0.6)
       ..strokeWidth = 1;
 
     // draw vertical and horizontal lines every 28 pixels

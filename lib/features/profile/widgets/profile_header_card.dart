@@ -28,7 +28,7 @@ class ProfileHeaderCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundColor: headerColourScheme.primary.withOpacity(0.15),
+            backgroundColor: headerColourScheme.primary.withValues(alpha: 0.15),
             child: Text(
               initials,
               style: TextStyle(
@@ -68,7 +68,7 @@ class ProfileHeaderCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: headerColourScheme.primary.withOpacity(0.10),
+                      color: headerColourScheme.primary.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(

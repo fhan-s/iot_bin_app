@@ -48,7 +48,7 @@ class BinIconMapDot extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.65),
+              color: Colors.black.withValues(alpha: 0.65),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/features/dashboards/janitor/dashboard.dart';
-import 'package:iot_bin_app/features/dashboards/manager/dashboard.dart';
+import 'package:iot_bin_app/features/dashboard/janitor/janitor_dashboard.dart';
+import 'package:iot_bin_app/features/dashboard/manager/manager_dashboard.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:iot_bin_app/features/login/login_page.dart';
 

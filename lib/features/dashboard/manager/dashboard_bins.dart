@@ -1,0 +1,334 @@
+import 'package:flutter/material.dart';
+import 'package:iot_bin_app/features/dashboard/janitor/widgets/bin_card.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:iot_bin_app/features/dashboard/manager/assign_janitor.dart';
+import 'package:iot_bin_app/features/dashboard/bin_list_tile.dart';
+
+class ManagerDashboardBinsPage extends StatefulWidget {
+  const ManagerDashboardBinsPage({super.key});
+
+  @override
+  State<ManagerDashboardBinsPage> createState() =>
+      _ManagerDashboardBinsPageState();
+}
+
+class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
+    with WidgetsBindingObserver {
+  final supabase = Supabase.instance.client;
+  String selectedBinCard = 'all';
+
+  RealtimeChannel? channel;
+  List<Map<String, dynamic>> bins = [];
+  Set<String> myBinsIDs = {};
+
+  //fetch manager's allocated bins from bin_assignment table
+  Future<List<Map<String, dynamic>>> getAllBins() async {
+    final binData = await supabase.from('bin').select('''
+    bin_id,
+    bin_name,
+    bin_status,
+    floor:floor_id (
+      floor_label,
+      building:building_id (
+        building_name
+      )
+    ),
+    fill_level,
+    bin_assignment (
+      janitorial_staff (
+        full_name
+      )
+    )
+  ''');
+    return List<Map<String, dynamic>>.from(binData);
+  }
+
+  Future<void> loadBins() async {
+    final loadedBins = await getAllBins();
+
+    // sort bins in descending fill level
+    loadedBins.sort((a, b) {
+      final fillA = (a['fill_level'] ?? 0) as int;
+      final fillB = (b['fill_level'] ?? 0) as int;
+      return fillB.compareTo(fillA);
+    });
+
+    setState(() {
+      bins = loadedBins;
+      myBinsIDs = bins.map((bin) => bin['bin_id'].toString()).toSet();
+    });
+  }
+
+  Future<void> realTimeUpdates() async {
+    //load and get all manager allocated bins first
+    await loadBins();
+
+    //get bin IDs
+    myBinsIDs = (await getAllBins())
+        .map((bin) => bin['bin_id'].toString())
+        .toSet();
+
+    if (channel != null) {
+      supabase.removeChannel(channel!);
+    }
+    // //subscribe to real-time updates for the manager's bins
+    channel = supabase.channel('realtime_bins_channel');
+
+    //listen for updates on the bin table
+    channel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'bin',
+          callback: (payload) async {
+            final updatedBin = payload.newRecord;
+            final updatedBinId = updatedBin['bin_id']?.toString();
+            // If the updated bin is in the manager's allocated bins, refresh the bin list
+            if (updatedBinId != null && myBinsIDs.contains(updatedBinId)) {
+              await loadBins();
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  // listen for app lifecycle changes
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App has come to the foreground
+      realTimeUpdates();
+    }
+  }
+
+  // init state to setup real-time updates
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    realTimeUpdates();
+  }
+
+  // dispose to remove channel subscription
+  @override
+  void dispose() {
+    if (channel != null) {
+      supabase.removeChannel(channel!);
+    }
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appColourScheme = Theme.of(context).colorScheme;
+    final numBins = bins.length.toString();
+    final numBinsNeedingAttention = bins
+        .where((bin) => bin['bin_status'] == 'Full')
+        .length
+        .toString();
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Overview',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                ],
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            sliver: SliverGrid(
+              delegate: SliverChildListDelegate.fixed([
+                BinCard(
+                  title: 'My Total Bins',
+                  value: numBins,
+                  icon: Icons.delete,
+                  hasSelectedFilter: selectedBinCard == 'all',
+                  onTap: () {
+                    setState(() {
+                      selectedBinCard = 'all';
+                    });
+                  },
+                ),
+                BinCard(
+                  title: 'Bins Needing Attention',
+                  value: numBinsNeedingAttention,
+                  icon: Icons.warning,
+                  hasSelectedFilter: selectedBinCard == 'attention',
+                  onTap: () {
+                    setState(() {
+                      selectedBinCard = 'attention';
+                    });
+                  },
+                ),
+              ]),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 1.05,
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'All Bins',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.only(left: 16),
+                    decoration: BoxDecoration(
+                      color: appColourScheme.primary,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        loadBins();
+                      },
+                      child: Row(
+                        children: [
+                          Text(
+                            'Refresh',
+                            style: TextStyle(color: appColourScheme.onPrimary),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            tooltip: 'Refresh',
+                            padding: EdgeInsets.all(0),
+                            onPressed: () {
+                              loadBins();
+                            },
+                            icon: Icon(
+                              Icons.refresh,
+                              color: appColourScheme.onPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          //tiles for each bin with status info
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            sliver: SliverToBoxAdapter(
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: getAllBins(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (snapshot.hasError) {
+                    debugPrint(snapshot.error.toString());
+                    return Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Center(
+                        child: Text(
+                          'Error loading bins: ${snapshot.error}',
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    );
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 20.0),
+                      child: Center(child: Text('No bins found.')),
+                    );
+                  }
+
+                  final bins = List<Map<String, dynamic>>.from(snapshot.data!);
+
+                  // sort bins in descending fill level
+                  bins.sort((a, b) {
+                    final fillA = (a['fill_level'] ?? 0) as int;
+                    final fillB = (b['fill_level'] ?? 0) as int;
+                    return fillB.compareTo(fillA);
+                  });
+
+                  List<Map<String, dynamic>> filteredBins = bins;
+                  if (selectedBinCard == 'attention') {
+                    filteredBins = bins
+                        .where((bin) => bin['bin_status'] == 'Full')
+                        .toList();
+                  }
+
+                  if (filteredBins.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 20.0),
+                      child: Center(child: Text('No bins found.')),
+                    );
+                  }
+
+                  return Column(
+                    children: List.generate(filteredBins.length, (index) {
+                      final bin = filteredBins[index];
+                      final binAssignments = bin['bin_assignment'];
+                      String assignedTo = 'No janitor allocated';
+
+                      if (binAssignments != null) {
+                        final janitor =
+                            binAssignments['janitorial_staff']
+                                as Map<String, dynamic>?;
+                        assignedTo =
+                            janitor?['full_name']?.toString() ??
+                            'No janitor allocated';
+                      }
+
+                      return BinListTile(
+                        binId: bin['bin_id'].toString(),
+                        binName: bin['bin_name'] ?? 'Unnamed Bin',
+                        binStatus: bin['bin_status'] ?? 'Unknown',
+                        binFillLevel: bin['fill_level'] ?? 0,
+                        assignedTo: assignedTo,
+                        onAssignPressed: () async {
+                          final result = await showModalBottomSheet<bool>(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => AssignJanitorBin(
+                              binId: bin['bin_id'].toString(),
+                            ),
+                          );
+
+                          if (result == true) {
+                            await loadBins();
+                          }
+                        },
+                      );
+                    }),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -29,7 +29,10 @@ const supabase = createClient(
 // Load Firebase service account from supabase --> edge function --> secrets (environment variables)
 const serviceAccountJSON = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON")!;
 const serviceAccount= JSON.parse(serviceAccountJSON);
+
 console.log("Firebase project:", serviceAccount.project_id);
+console.log("PK header ok:", serviceAccount.private_key.includes("BEGIN PRIVATE KEY"));
+console.log("PK has newlines:", serviceAccount.private_key.includes("\n"));
 
 Deno.serve(async (req) => {
   try {
