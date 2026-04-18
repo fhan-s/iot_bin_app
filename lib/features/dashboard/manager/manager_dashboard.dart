@@ -3,8 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:iot_bin_app/features/profile/profile_page.dart';
 import 'package:iot_bin_app/features/maps/map_page.dart';
-import 'package:iot_bin_app/features/analytics/janitor/analytic_page.dart';
-import 'package:iot_bin_app/features/dashboard/manager/dashboard_staff.dart';
+import 'package:iot_bin_app/features/analytics/analytic_view.dart';
 import 'package:iot_bin_app/features/dashboard/manager/dashboard_bins.dart';
 
 class ManagerDashboardPage extends StatefulWidget {
@@ -77,7 +76,7 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
       case 0:
         return const ManagerDashboardBinsPage();
       case 1:
-        return const JanitorAnalyticPage();
+        return const BinAnalyticPage();
       case 2:
         return const JanitorMapPage();
       default:
@@ -130,7 +129,7 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
         onTap: (index) => setState(() => selectedIndex = index),
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
+            icon: Icon(Icons.home),
             label: 'Manager Dashboard',
           ),
           BottomNavigationBarItem(

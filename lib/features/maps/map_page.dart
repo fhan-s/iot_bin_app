@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/features/maps/widgets/bin_marker.dart';
+import 'package:iot_bin_app/features/maps/bin_map_icon.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:iot_bin_app/features/maps/widgets/bin_icon_map.dart';
+import 'package:iot_bin_app/features/maps/widgets/bin_icon_map_dot.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class JanitorMapPage extends StatefulWidget {
@@ -16,6 +16,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
   String? selectedBuildingId;
   String? selectedFloorId;
   String? selectedFloorSvgAsset;
+  String? userRole;
   Future<List<BinMapIcon>>? binsFuture;
   //map icon
   final TransformationController _mapController = TransformationController();
@@ -49,9 +50,47 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
   }
 
   void loadBins() {
+    if (!mounted) return;
     setState(() {
       binsFuture = getBins();
     });
+  }
+
+  Future<void> getUserRole() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+    final userRoleResponse = await supabase
+        .from('janitorial_staff')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (!mounted) return;
+
+    setState(() {
+      userRole = userRoleResponse['role'];
+    });
+  }
+
+  String getFloorSvgAsset(String? floorLabel) {
+    switch (floorLabel) {
+      case '1':
+        return 'assets/maps/Floor-1.svg';
+      case '2':
+        return 'assets/maps/Floor-2.svg';
+      case 'Ground':
+        return 'assets/maps/Floor-Ground.svg';
+      case 'Lower Ground':
+        return 'assets/maps/Floor-Lower Ground.svg';
+      case '3':
+        return 'assets/maps/Floor-3.svg';
+      case '4':
+        return 'assets/maps/Floor-4.svg';
+      case '5':
+        return 'assets/maps/Floor-5.svg';
+      default:
+        return 'assets/maps/Floor-1.svg';
+    }
   }
 
   Widget buildEditButtons() {
@@ -125,7 +164,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                     mapHeight: mapImageHeight,
                     markerSize: markerSize,
                   );
-
+                  if (!mounted) return;
                   setState(() {
                     draftPositions[bin.id] = normalized;
                   });
@@ -153,18 +192,18 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
 
   Color getFillColor(int fillLevel) {
     if (fillLevel >= 75) {
-      return Colors.green;
+      return Colors.red;
     } else if (fillLevel >= 50) {
       return Colors.orange;
     } else {
-      return Colors.red;
+      return Colors.green;
     }
   }
 
   Future<void> saveBinPosition(String binId) async {
     final draft = draftPositions[binId];
     if (draft == null) return;
-
+    if (!mounted) return;
     setState(() => isSavingPosition = true);
 
     try {
@@ -219,22 +258,26 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
   }
 
   // Fetch buildings and floors from Supabase
-  Future<void> fetchBuildings() async {
+  Future<void> getBuildingsFromDatabase() async {
     final data = await supabase
         .from('building')
         .select('building_id, building_name');
 
+    if (!mounted) return;
     setState(() {
       buildingsList = List<Map<String, dynamic>>.from(data);
     });
   }
 
-  Future<void> fetchFloors(String buildingId) async {
+  Future<void> getFloorsFromDatabase(String buildingId) async {
     final data = await supabase
         .from('floor')
         .select('floor_id, floor_label')
         // fetch floors only for the selected building
-        .eq('building_id', buildingId);
+        .eq('building_id', buildingId)
+        .order('floor_label');
+
+    if (!mounted) return;
 
     setState(() {
       floorList = List<Map<String, dynamic>>.from(data);
@@ -248,12 +291,13 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
   }
 
   void _showBinDetails(BinMapIcon bin) {
+    if (!mounted) return;
     setState(() => selectedBinId = bin.id);
 
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
-      builder: (_) {
+      builder: (sheetContext) {
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
           child: Column(
@@ -263,7 +307,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
               Text(
                 bin.name,
                 style: Theme.of(
-                  context,
+                  sheetContext,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
@@ -285,20 +329,23 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
               const SizedBox(height: 14),
               Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        setState(() {
-                          editingBinId = bin.id;
-                          draftPositions[bin.id] = Offset(bin.x, bin.y);
-                        });
-                      },
-                      icon: const Icon(Icons.open_with),
-                      label: const Text('Move'),
+                  if (userRole == 'manager') ...[
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          if (!mounted) return;
+                          setState(() {
+                            editingBinId = bin.id;
+                            draftPositions[bin.id] = Offset(bin.x, bin.y);
+                          });
+                        },
+                        icon: const Icon(Icons.open_with),
+                        label: const Text('Move'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
+                    const SizedBox(width: 12),
+                  ],
 
                   Expanded(
                     child: FilledButton.icon(
@@ -340,7 +387,8 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
         )
         .subscribe();
 
-    fetchBuildings();
+    getBuildingsFromDatabase();
+    getUserRole();
   }
 
   @override
@@ -392,7 +440,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                         binsFuture = null;
                       });
                       if (value != null) {
-                        fetchFloors(value);
+                        getFloorsFromDatabase(value);
                       }
                     },
                   ),
@@ -409,11 +457,22 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                       );
                     }).toList(),
                     onChanged: (value) {
+                      final selectedFloor = floorList.firstWhere(
+                        (f) => f['floor_id'] == value,
+                        orElse: () => <String, dynamic>{},
+                      );
+
+                      if (!mounted) return;
                       setState(() {
                         selectedFloorId = value;
                         selectedBinId = null;
                         editingBinId = null;
                         draftPositions.clear();
+
+                        selectedFloorSvgAsset = getFloorSvgAsset(
+                          selectedFloor['floor_label']?.toString(),
+                        );
+
                         binsFuture = value != null ? getBins() : null;
                       });
                     },
@@ -437,7 +496,9 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                   }
 
                   if (!snapshot.hasData) {
-                    return const Center(child: Text('No data'));
+                    return const Center(
+                      child: Text('Please select a building and floor'),
+                    );
                   }
 
                   if (selectedBuildingId == null) {
@@ -463,47 +524,6 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                   const double mapImageHeight = 800;
                   const double markerSize = 32;
 
-                  // return ClipRRect(
-                  //   borderRadius: BorderRadius.circular(18),
-                  //   child: Container(
-                  //     decoration: BoxDecoration(
-                  //       color: colorScheme.surface,
-                  //       border: Border.all(color: colorScheme.outlineVariant),
-                  //     ),
-                  //     child: InteractiveViewer(
-                  //       minScale: 0.3,
-                  //       maxScale: 4.0,
-                  //       boundaryMargin: const EdgeInsets.all(100),
-                  //       constrained: false,
-                  //       child: SizedBox(
-                  //         width: mapImageWidth,
-                  //         height: mapImageHeight,
-                  //         child: Stack(
-                  //           children: [
-                  //             Positioned.fill(
-                  //               child: SvgPicture.asset(
-                  //                 'assets/maps/Floor-1.svg',
-                  //                 fit: BoxFit.fill,
-                  //               ),
-                  //             ),
-
-                  //             for (final bin in bins)
-                  //               Positioned(
-                  //                 left: (mapImageWidth * bin.x) - 16,
-                  //                 top: (mapImageHeight * bin.y) - 16,
-                  //                 child: BinIconMapDot(
-                  //                   fillColor: getFillColor(bin.fill),
-                  //                   isSelected: selectedBinId == bin.id,
-                  //                   label: bin.name,
-                  //                   onTap: () => _showBinDetails(bin),
-                  //                 ),
-                  //               ),
-                  //           ],
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   ),
-                  // );
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(18),
                     child: Container(
@@ -528,7 +548,8 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                                 children: [
                                   Positioned.fill(
                                     child: SvgPicture.asset(
-                                      'assets/maps/Floor-1.svg',
+                                      selectedFloorSvgAsset ??
+                                          'assets/maps/Floor-1.svg',
                                       fit: BoxFit.fill,
                                     ),
                                   ),

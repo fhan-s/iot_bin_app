@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/features/dashboard/janitor/widgets/bin_card.dart';
+import 'package:iot_bin_app/features/dashboard/widgets/bin_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:iot_bin_app/features/dashboard/bin_list_tile.dart';
+import 'package:iot_bin_app/features/dashboard/widgets/bin_list_tile.dart';
 
 class JanitorDashboardBinsPage extends StatefulWidget {
   const JanitorDashboardBinsPage({super.key});
@@ -19,24 +19,31 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
   Set<String> myBinsIDs = {};
   String selectedBinCard = 'all';
   //fetch janitor's allocated bins from bin_assignment table
-  Future<List<Map<String, dynamic>>> getBins() async {
-    final binData = await supabase
-        .from('bin_assignment')
-        .select('bin:bin (bin_id,bin_name, bin_status, fill_level)');
+  Future<List<Map<String, dynamic>>> getAssignedBins() async {
+    final binData = await supabase.from('bin_assignment').select('''
+    bin:bin (bin_id, bin_name, bin_status, fill_level,floor:floor (floor_label,building:building (building_name)),sensor_device (device_id,device_status,last_seen_at))
+  ''');
+
     return (binData as List)
         .map((row) => row['bin'] as Map<String, dynamic>)
         .toList();
   }
 
-  Future<void> loadBins() async {
-    final loadedBins = await getBins();
-
-    // sort bins in descending fill level
-    loadedBins.sort((a, b) {
+  void sortBinsByFillLevel(List<Map<String, dynamic>> bins) {
+    bins.sort((a, b) {
       final fillA = (a['fill_level'] ?? 0) as int;
       final fillB = (b['fill_level'] ?? 0) as int;
       return fillB.compareTo(fillA);
     });
+  }
+
+  Future<void> loadBins() async {
+    final loadedBins = await getAssignedBins();
+
+    if (!mounted) return;
+
+    // sort bins in descending fill level
+    sortBinsByFillLevel(loadedBins);
 
     setState(() {
       bins = loadedBins;
@@ -44,12 +51,29 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
     });
   }
 
+  String? getDeviceProblemLabel(Map<String, dynamic> bin) {
+    final sensor = bin['sensor_device'];
+
+    if (sensor == null) {
+      return 'No device attached';
+    }
+
+    final status = sensor['device_status']?.toString().toLowerCase();
+
+    if (status == 'offline') {
+      return 'Offline';
+    }
+
+    return null;
+  }
+
   Future<void> realTimeUpdates() async {
     //load and get all janitor allocated bins first
     await loadBins();
 
+    if (!mounted) return;
     //get bin IDs
-    myBinsIDs = (await getBins())
+    myBinsIDs = (await getAssignedBins())
         .map((bin) => bin['bin_id'].toString())
         .toSet();
 
@@ -69,6 +93,8 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
             final updatedBin = payload.newRecord;
             final updatedBinId = updatedBin['bin_id']?.toString();
             // If the updated bin is in the janitor's allocated bins, refresh the bin list
+            if (!mounted) return;
+
             if (updatedBinId != null && myBinsIDs.contains(updatedBinId)) {
               await loadBins();
             }
@@ -80,7 +106,7 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
   // listen for app lifecycle changes
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && mounted) {
       // App has come to the foreground
       realTimeUpdates();
     }
@@ -158,20 +184,9 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                     });
                   },
                 ),
-                BinCard(
-                  title: 'Average response time',
-                  value: 'n/a',
-                  icon: Icons.bar_chart,
-                  hasSelectedFilter: selectedBinCard == 'response',
-                  onTap: () {
-                    setState(() {
-                      selectedBinCard = 'response';
-                    });
-                  },
-                ),
               ]),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
+                crossAxisCount: 2,
                 mainAxisSpacing: 10,
                 crossAxisSpacing: 10,
                 childAspectRatio: 1.05,
@@ -204,10 +219,9 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                       child: Row(
                         children: [
                           Text(
-                            'Update Bins',
+                            'Refresh',
                             style: TextStyle(color: appColourScheme.onPrimary),
                           ),
-                          const SizedBox(width: 4),
                           IconButton(
                             tooltip: 'Refresh',
                             padding: EdgeInsets.all(0),
@@ -232,7 +246,7 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
             padding: const EdgeInsets.symmetric(horizontal: 8),
             sliver: SliverToBoxAdapter(
               child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: getBins(),
+                future: getAssignedBins(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Padding(
@@ -261,11 +275,7 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                   final bins = List<Map<String, dynamic>>.from(snapshot.data!);
 
                   // sort bins in descending fill level
-                  bins.sort((a, b) {
-                    final fillA = (a['fill_level'] ?? 0) as int;
-                    final fillB = (b['fill_level'] ?? 0) as int;
-                    return fillB.compareTo(fillA);
-                  });
+                  sortBinsByFillLevel(bins);
 
                   List<Map<String, dynamic>> filteredBins = bins;
 
@@ -277,7 +287,7 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                   if (filteredBins.isEmpty) {
                     return const Padding(
                       padding: EdgeInsets.only(top: 20.0),
-                      child: Center(child: Text('No bins found.')),
+                      child: Center(child: Text('No bins assigned.')),
                     );
                   }
 
@@ -289,6 +299,9 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                         binName: bin['bin_name'] ?? 'Unnamed Bin',
                         binStatus: bin['bin_status'] ?? 'Unknown',
                         binFillLevel: bin['fill_level'] ?? 0,
+                        binLocation:
+                            '${bin['floor']?['building']?['building_name'] ?? 'Unknown Building'}, ${bin['floor']?['floor_label'] ?? 'Unknown Floor'}',
+                        deviceProblemLabel: getDeviceProblemLabel(bin),
                       );
                     }),
                   );

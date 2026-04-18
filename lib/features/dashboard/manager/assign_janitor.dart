@@ -22,15 +22,37 @@ class _AssignJanitorBinState extends State<AssignJanitorBin> {
   }
 
   Future<void> getJanitors() async {
-    final janitordata = await supabase
+    final janitorData = await supabase
         .from('janitorial_staff')
-        .select('id, full_name')
+        .select('''
+        id,
+        full_name,
+        bin_assignment (
+          bin_id
+        )
+      ''')
         .eq('role', 'janitor');
 
-    if (!mounted) return;
+    final processed = List<Map<String, dynamic>>.from(janitorData).map((
+      janitor,
+    ) {
+      final assignments = janitor['bin_assignment'];
 
+      int count = 0;
+
+      if (assignments != null) {
+        count = assignments.length;
+      }
+      return {
+        'id': janitor['id'],
+        'full_name': janitor['full_name'],
+        'allocated_bins': count,
+      };
+    }).toList();
+
+    if (!mounted) return;
     setState(() {
-      janitors = List<Map<String, dynamic>>.from(janitordata);
+      janitors = processed;
       isLoading = false;
     });
   }
@@ -45,44 +67,50 @@ class _AssignJanitorBinState extends State<AssignJanitorBin> {
     Navigator.pop(context, true);
   }
 
+  // UI for assigning janitor to bin
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const SizedBox(
+      return Container(
         height: 250,
-        child: Center(child: CircularProgressIndicator()),
+        alignment: Alignment.center,
+        child: const CircularProgressIndicator(),
       );
     }
+    return Container(
+      height: 350,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          const Text(
+            'Assign Janitor',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: ListView.builder(
+              itemCount: janitors.length,
+              itemBuilder: (context, index) {
+                final janitor = janitors[index];
 
-    return SafeArea(
-      child: SizedBox(
-        height: 350,
-        child: Column(
-          children: [
-            const SizedBox(height: 12),
-            const Text(
-              'Assign Janitor',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: const Color.fromARGB(255, 216, 215, 215),
+                    child: Icon(Icons.person_2),
+                  ),
+                  title: Text(janitor['full_name'] ?? 'Unnamed Janitor'),
+                  subtitle: Text(
+                    'Allocated Bins: ${janitor['allocated_bins'] ?? 0}',
+                  ),
+                  onTap: () async {
+                    await assignJanitor(janitor['id'].toString());
+                  },
+                );
+              },
             ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: ListView.builder(
-                itemCount: janitors.length,
-                itemBuilder: (context, index) {
-                  final janitor = janitors[index];
-
-                  return ListTile(
-                    leading: const CircleAvatar(child: Icon(Icons.person)),
-                    title: Text(janitor['full_name'] ?? 'Unnamed Janitor'),
-                    onTap: () async {
-                      await assignJanitor(janitor['id'].toString());
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

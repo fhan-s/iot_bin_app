@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/features/analytics/janitor/analytic_page.dart';
+import 'package:iot_bin_app/features/analytics/analytic_view.dart';
 import 'package:iot_bin_app/features/maps/map_page.dart';
 import 'package:iot_bin_app/features/dashboard/janitor/dashboard_bins.dart';
 import 'package:iot_bin_app/features/profile/profile_page.dart';
@@ -16,7 +16,6 @@ class JanitorDashboardPage extends StatefulWidget {
 class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
   final supabase = Supabase.instance.client;
   int selectedIndex = 0;
-
   @override
   void initState() {
     super.initState();
@@ -53,6 +52,7 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
     });
   }
 
+  // helper function to store FCM token in the database
   Future<void> setFcmToken(String fcmToken) async {
     final userId = supabase.auth.currentUser?.id;
     if (userId != null) {
@@ -68,12 +68,13 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
     super.dispose();
   }
 
+  // returns the selected page based on the selected index
   Widget getSelectedPage() {
     switch (selectedIndex) {
       case 0:
         return const JanitorDashboardBinsPage();
       case 1:
-        return const JanitorAnalyticPage();
+        return const BinAnalyticPage();
       case 2:
         return const JanitorMapPage();
       default:
@@ -128,7 +129,7 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
         onTap: (index) => setState(() => selectedIndex = index),
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
+            icon: Icon(Icons.home),
             label: 'Janitor Dashboard',
           ),
           BottomNavigationBarItem(

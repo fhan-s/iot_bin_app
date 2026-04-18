@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:iot_bin_app/features/profile/profile_service.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -9,8 +10,10 @@ class ChangePasswordPage extends StatefulWidget {
 }
 
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
+  final profileService = ProfileService();
   final newpasswordController = TextEditingController();
   final confirmpasswordController = TextEditingController();
+
   bool obscureNewPasswordText = true;
   bool obscureConfirmPasswordText = true;
   bool isLoading = false;
@@ -18,34 +21,33 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Future<void> changePassword() async {
     if (isLoading) return;
 
-    setState(() {
-      isLoading = true;
-    });
     final newPassword = newpasswordController.text.trim();
     final confirmPassword = confirmpasswordController.text.trim();
-    final supabase = Supabase.instance.client;
 
     FocusScope.of(context).unfocus(); // Dismiss keyboard if open
 
+    // Password validation
+    if (newPassword.isEmpty) {
+      passwordMessage('Password cannot be empty');
+      return;
+    }
+    if (newPassword != confirmPassword) {
+      passwordMessage('Passwords do not match');
+      return;
+    }
+    if (newPassword.length < 6) {
+      passwordMessage('Password must be at least 6 characters long');
+      return;
+    }
+    if (!RegExp(r'[A-Z]').hasMatch(newPassword)) {
+      passwordMessage('Password must contain at least one uppercase letter');
+      return;
+    }
+    setState(() {
+      isLoading = true;
+    });
     try {
-      if (newPassword.isEmpty) {
-        passwordMessage('Password cannot be empty');
-        return;
-      }
-      if (newPassword != confirmPassword) {
-        passwordMessage('Passwords do not match');
-        return;
-      }
-      if (newPassword.length < 6) {
-        passwordMessage('Password must be at least 6 characters long');
-        return;
-      }
-      if (!RegExp(r'[A-Z]').hasMatch(newPassword)) {
-        passwordMessage('Password must contain at least one uppercase letter');
-        return;
-      }
-
-      await supabase.auth.updateUser(UserAttributes(password: newPassword));
+      await profileService.updatePassword(newPassword);
       if (!mounted) return;
       passwordMessage('Password changed successfully');
       Navigator.of(context).pop();
@@ -54,7 +56,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       passwordMessage('Password change failed: $e');
     } finally {
       if (mounted) {
-        // state is updated only if the widget is still mounted
         setState(() {
           isLoading = false;
         });
@@ -78,9 +79,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    final appColourScheme = Theme.of(context).colorScheme;
+    //final appColourScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: appColourScheme.surfaceContainerHighest,
+      backgroundColor: Color(
+        0xFFf0f0f0,
+      ), //appColourScheme.surfaceContainerHighest,
       appBar: AppBar(title: const Text('Bin IoT App')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

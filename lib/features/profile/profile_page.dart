@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:iot_bin_app/features/profile/change_password_page.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:iot_bin_app/features/profile/widgets/profile_section_card.dart';
-import 'package:iot_bin_app/features/profile/widgets/profile_header_card.dart';
-import 'package:iot_bin_app/features/profile/widgets/profile_item.dart';
-import 'package:iot_bin_app/features/profile/widgets/profile_section_title.dart';
+import 'package:iot_bin_app/features/profile/profile_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -14,33 +10,15 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final supabase = Supabase.instance.client;
-
-  Future<Map<String, dynamic>?> displayUserProfile() async {
-    final user = supabase.auth.currentUser;
-    if (user == null) return null;
-
-    final userData = await supabase
-        .from('janitorial_staff')
-        .select('full_name, role')
-        .eq('id', user.id)
-        .maybeSingle();
-
-    if (userData == null) return null;
-
-    return {...userData, 'email': user.email};
-  }
+  final profileService = ProfileService();
 
   Future<void> logout() async {
-    await supabase.auth.signOut();
+    await profileService.signOut();
     if (!mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Future<void> passwordReset() async {
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
@@ -71,6 +49,19 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  String userInitials(String name) {
+    final parts = name
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+
+    if (parts.isEmpty) return 'U';
+    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
+
+    return (parts[0].characters.first + parts[1].characters.first)
+        .toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -84,11 +75,12 @@ class _ProfilePageState extends State<ProfilePage> {
         elevation: 0,
       ),
       body: FutureBuilder<Map<String, dynamic>?>(
-        future: displayUserProfile(),
+        future: profileService.getCurrentUserProfile(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+
           if (!snapshot.hasData || snapshot.data == null) {
             return const Center(child: Text('No user data found.'));
           }
@@ -98,98 +90,226 @@ class _ProfilePageState extends State<ProfilePage> {
               (userData['full_name'] as String?)?.trim() ?? 'No Name';
           final role = (userData['role'] as String?)?.trim() ?? 'No Role';
           final email = (userData['email'] as String?)?.trim() ?? 'No Email';
-
           final initials = userInitials(fullName);
 
           return ListView(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              32 + MediaQuery.of(context).padding.bottom,
-            ),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
-              ProfileHeaderCard(
-                initials: initials,
-                fullName: fullName,
-                email: email,
-                role: role,
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colourScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: colourScheme.primary.withValues(
+                        alpha: 0.15,
+                      ),
+                      child: Text(
+                        initials,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: colourScheme.primary,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            fullName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            email,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: colourScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colourScheme.primary.withValues(
+                                  alpha: 0.10,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                role,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: colourScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 16),
 
-              SectionTitle('Account'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  'Options',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: colourScheme.onSurface,
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 8),
-              ProfileSectionCard(
-                children: [
-                  ProfileItem(
-                    icon: Icons.badge_outlined,
-                    title: 'Full name',
-                    subtitle: fullName,
-                    onTap: () {},
+
+              // Change password card
+              Container(
+                decoration: BoxDecoration(
+                  color: colourScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: passwordReset,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          height: 40,
+                          width: 40,
+                          decoration: BoxDecoration(
+                            color: colourScheme.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.lock_outline,
+                            color: colourScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Change password',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: colourScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Update your password',
+                                style: TextStyle(
+                                  color: colourScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          color: colourScheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
                   ),
-                  const Divider(height: 1),
-                  ProfileItem(
-                    icon: Icons.email_outlined,
-                    title: 'Email',
-                    subtitle: email,
-                    onTap: () {},
-                  ),
-                  const Divider(height: 1),
-                  ProfileItem(
-                    icon: Icons.work_outline,
-                    title: 'Role',
-                    subtitle: role,
-                    onTap: () {},
-                  ),
-                ],
+                ),
               ),
 
               const SizedBox(height: 16),
 
-              SectionTitle('Security'),
-              const SizedBox(height: 8),
-              ProfileSectionCard(
-                children: [
-                  ProfileItem(
-                    icon: Icons.lock_outline,
-                    title: 'Change password',
-                    subtitle: 'Update your password',
-                    onTap: passwordReset,
+              // Logout
+              Container(
+                decoration: BoxDecoration(
+                  color: colourScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: confirmLogout,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          height: 40,
+                          width: 40,
+                          decoration: BoxDecoration(
+                            color: colourScheme.error.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.logout, color: colourScheme.error),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Log out',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: colourScheme.error,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Sign out of this account',
+                                style: TextStyle(
+                                  color: colourScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          color: colourScheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
-
-              const SizedBox(height: 16),
-              ProfileSectionCard(
-                children: [
-                  ProfileItem(
-                    icon: Icons.logout,
-                    title: 'Log out',
-                    subtitle: 'Sign out of this account',
-                    titleColor: colourScheme.error,
-                    iconColor: colourScheme.error,
-                    onTap: confirmLogout,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
             ],
           );
         },
       ),
     );
-  }
-
-  String userInitials(String name) {
-    final parts = name
-        .split(RegExp(r'\s+'))
-        .where((p) => p.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) return 'U';
-    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
-    return (parts[0].characters.first + parts[1].characters.first)
-        .toUpperCase();
   }
 }

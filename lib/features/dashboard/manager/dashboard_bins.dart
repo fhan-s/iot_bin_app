@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/features/dashboard/janitor/widgets/bin_card.dart';
+import 'package:iot_bin_app/features/dashboard/widgets/bin_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:iot_bin_app/features/dashboard/manager/assign_janitor.dart';
-import 'package:iot_bin_app/features/dashboard/bin_list_tile.dart';
+import 'package:iot_bin_app/features/dashboard/widgets/bin_list_tile.dart';
 
 class ManagerDashboardBinsPage extends StatefulWidget {
   const ManagerDashboardBinsPage({super.key});
@@ -34,6 +34,12 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
       )
     ),
     fill_level,
+    sensor_device (
+      device_id,
+      device_status,
+      last_seen_at,
+      battery_level
+    ),
     bin_assignment (
       janitorial_staff (
         full_name
@@ -43,20 +49,40 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
     return List<Map<String, dynamic>>.from(binData);
   }
 
-  Future<void> loadBins() async {
-    final loadedBins = await getAllBins();
-
-    // sort bins in descending fill level
-    loadedBins.sort((a, b) {
+  sortBinsByFillLevel(List<Map<String, dynamic>> bins) {
+    bins.sort((a, b) {
       final fillA = (a['fill_level'] ?? 0) as int;
       final fillB = (b['fill_level'] ?? 0) as int;
       return fillB.compareTo(fillA);
     });
+  }
+
+  Future<void> loadBins() async {
+    final loadedBins = await getAllBins();
+
+    // sort bins in descending fill level
+    sortBinsByFillLevel(loadedBins);
 
     setState(() {
       bins = loadedBins;
       myBinsIDs = bins.map((bin) => bin['bin_id'].toString()).toSet();
     });
+  }
+
+  String? getDeviceProblemLabel(Map<String, dynamic> bin) {
+    final sensor = bin['sensor_device'];
+
+    if (sensor == null) {
+      return 'No device attached';
+    }
+
+    final status = sensor['device_status']?.toString().toLowerCase();
+
+    if (status == 'offline') {
+      return 'Offline';
+    }
+
+    return null;
   }
 
   Future<void> realTimeUpdates() async {
@@ -152,7 +178,7 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
             sliver: SliverGrid(
               delegate: SliverChildListDelegate.fixed([
                 BinCard(
-                  title: 'My Total Bins',
+                  title: 'Total Bins',
                   value: numBins,
                   icon: Icons.delete,
                   hasSelectedFilter: selectedBinCard == 'all',
@@ -211,7 +237,6 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
                             'Refresh',
                             style: TextStyle(color: appColourScheme.onPrimary),
                           ),
-                          const SizedBox(width: 4),
                           IconButton(
                             tooltip: 'Refresh',
                             padding: EdgeInsets.all(0),
@@ -266,11 +291,7 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
                   final bins = List<Map<String, dynamic>>.from(snapshot.data!);
 
                   // sort bins in descending fill level
-                  bins.sort((a, b) {
-                    final fillA = (a['fill_level'] ?? 0) as int;
-                    final fillB = (b['fill_level'] ?? 0) as int;
-                    return fillB.compareTo(fillA);
-                  });
+                  sortBinsByFillLevel(bins);
 
                   List<Map<String, dynamic>> filteredBins = bins;
                   if (selectedBinCard == 'attention') {
@@ -306,6 +327,9 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
                         binName: bin['bin_name'] ?? 'Unnamed Bin',
                         binStatus: bin['bin_status'] ?? 'Unknown',
                         binFillLevel: bin['fill_level'] ?? 0,
+                        binLocation:
+                            '${bin['floor']?['building']?['building_name'] ?? 'Unknown Building'}, ${bin['floor']?['floor_label'] ?? 'Unknown Floor'}',
+                        deviceProblemLabel: getDeviceProblemLabel(bin),
                         assignedTo: assignedTo,
                         onAssignPressed: () async {
                           final result = await showModalBottomSheet<bool>(

@@ -1,30 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:iot_bin_app/features/authentication/auth_service.dart';
 import 'package:iot_bin_app/features/dashboard/janitor/janitor_dashboard.dart';
 import 'package:iot_bin_app/features/dashboard/manager/manager_dashboard.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:iot_bin_app/features/login/login_page.dart';
 
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
-
-  Future<String?> getUserRole() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) {
-      return null;
-    }
-    final response = await Supabase.instance.client
-        .from('janitorial_staff')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle();
-    return response?['role'] as String?;
-  }
+class AuthenticationGate extends StatelessWidget {
+  const AuthenticationGate({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final supabase = Supabase.instance.client;
+    final authService = AuthService();
     return StreamBuilder(
-      stream: supabase.auth.onAuthStateChange,
+      stream: authService.authStateChanges,
       builder: (context, snapshot) {
         try {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -32,11 +19,11 @@ class AuthGate extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          final session = supabase.auth.currentSession;
+          final loginSession = authService.currentSession;
           // User is already logged in
-          if (session != null) {
+          if (loginSession != null) {
             return FutureBuilder<String?>(
-              future: getUserRole(),
+              future: authService.getUserRole(),
               builder: (context, roleSnapshot) {
                 if (roleSnapshot.connectionState == ConnectionState.waiting) {
                   return const Scaffold(
@@ -46,16 +33,13 @@ class AuthGate extends StatelessWidget {
                 final role = roleSnapshot.data;
                 // Navigate based on user role
                 if (role == "manager") {
-                  debugPrint("<LOGIN OK: $role");
                   return const ManagerDashboardPage();
-                } else if (role == "janitor") {
-                  debugPrint("<LOGIN OK: $role");
-                  return const JanitorDashboardPage();
-                } else {
-                  // Unknown role or no role assigned
-                  debugPrint("LOGIN FAILED: $role");
-                  return const LoginPage();
                 }
+                if (role == "janitor") {
+                  return const JanitorDashboardPage();
+                }
+
+                return const LoginPage();
               },
             );
           } else {
@@ -63,7 +47,6 @@ class AuthGate extends StatelessWidget {
             return const LoginPage();
           }
         } catch (e) {
-          debugPrint("LOGIN FAILED: $e");
           // In case of any error, redirect to login page
           return const LoginPage();
         }
