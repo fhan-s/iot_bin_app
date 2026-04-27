@@ -31,7 +31,7 @@ class AuthenticationGate extends StatelessWidget {
                   );
                 }
                 final role = roleSnapshot.data;
-                // Navigate based on user role
+                // role based access control to dashboard pages
                 if (role == "manager") {
                   return const ManagerDashboardPage();
                 }
@@ -43,11 +43,9 @@ class AuthenticationGate extends StatelessWidget {
               },
             );
           } else {
-            // User is not logged in
             return const LoginPage();
           }
         } catch (e) {
-          // In case of any error, redirect to login page
           return const LoginPage();
         }
       },

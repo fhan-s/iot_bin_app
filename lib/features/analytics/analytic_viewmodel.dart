@@ -29,8 +29,8 @@ class BinAnalyticsViewModel extends ChangeNotifier {
 
     final role = userRole['role'];
 
-    final response = await supabase
-        .from('notification_event')
+    final emptiedBinsData = await supabase
+        .from('bins_emptied')
         .select('''
           created_at,
           bin:bin_id (
@@ -47,7 +47,7 @@ class BinAnalyticsViewModel extends ChangeNotifier {
         .order('created_at', ascending: false)
         .limit(numberOfActivityItems);
 
-    final data = List<Map<String, dynamic>>.from(response);
+    final data = List<Map<String, dynamic>>.from(emptiedBinsData);
 
     if (role == 'janitor') {
       return data.where((item) {
@@ -68,16 +68,17 @@ class BinAnalyticsViewModel extends ChangeNotifier {
     if (userId == null) return {};
 
     final since = DateTime.now().subtract(Duration(days: days));
-
+    //display bin frequency data graph if selected
     if (selectedGraph == 'bin_frequency') {
       final binGraphData = BinFrequencyData(supabase);
       return binGraphData.getFullCountsPerBin(userId: userId, since: since);
     }
+    //display bin fill rate data graph if selected
 
-    if (selectedGraph == 'bin_fill_rate') {
-      final binGraphData = BinFrequencyData(supabase);
-      return binGraphData.getFullCountsPerBin(userId: userId, since: since);
-    }
+    // if (selectedGraph == 'bin_fill_rate') {
+    //   final binGraphData = BinFrequencyData(supabase);
+    //   return binGraphData
+    // }
 
     return {};
   }
@@ -94,6 +95,7 @@ class BinAnalyticsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // function to format bin activity datetime string to human readable format eg 23/4/2026 13:00
   String formatTime(String isoString) {
     final dt = DateTime.parse(isoString).toLocal();
     return '${dt.day}/${dt.month}/${dt.year} '

@@ -17,7 +17,12 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
   RealtimeChannel? channel;
   List<Map<String, dynamic>> bins = [];
   Set<String> myBinsIDs = {};
+  bool pageIsLoading = true;
+  String? errorMessage;
+
+  // default bin card is all bins
   String selectedBinCard = 'all';
+
   //fetch janitor's allocated bins from bin_assignment table
   Future<List<Map<String, dynamic>>> getAssignedBins() async {
     final binData = await supabase.from('bin_assignment').select('''
@@ -37,21 +42,7 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
     });
   }
 
-  Future<void> loadBins() async {
-    final loadedBins = await getAssignedBins();
-
-    if (!mounted) return;
-
-    // sort bins in descending fill level
-    sortBinsByFillLevel(loadedBins);
-
-    setState(() {
-      bins = loadedBins;
-      myBinsIDs = bins.map((bin) => bin['bin_id'].toString()).toSet();
-    });
-  }
-
-  String? getDeviceProblemLabel(Map<String, dynamic> bin) {
+  String? getDeviceStatus(Map<String, dynamic> bin) {
     final sensor = bin['sensor_device'];
 
     if (sensor == null) {
@@ -67,21 +58,48 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
     return null;
   }
 
-  Future<void> realTimeUpdates() async {
-    //load and get all janitor allocated bins first
+  Future<void> loadBins() async {
+    if (!mounted) return;
+
+    // display loading indicator while fetching data
+    setState(() {
+      pageIsLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      //load all allocated bins
+      final loadedBins = await getAssignedBins();
+
+      if (!mounted) return;
+
+      // sort bins in descending fill level
+      sortBinsByFillLevel(loadedBins);
+
+      setState(() {
+        bins = loadedBins;
+        myBinsIDs = bins.map((bin) => bin['bin_id'].toString()).toSet();
+        pageIsLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        errorMessage = 'Failed to load bins. Error: $e';
+        pageIsLoading = false;
+      });
+    }
+  }
+
+  Future<void> updateDashboardRealTime() async {
     await loadBins();
 
     if (!mounted) return;
-    //get bin IDs
-    myBinsIDs = (await getAssignedBins())
-        .map((bin) => bin['bin_id'].toString())
-        .toSet();
 
     if (channel != null) {
       supabase.removeChannel(channel!);
     }
-    // //subscribe to real-time updates for the janitor's bins
-    channel = supabase.channel('realtime_bins_channel');
+    // subscribe to real-time updates for the janitor's bins
+    channel = supabase.channel('bin_updates_channel');
 
     //listen for updates on the bin table
     channel!
@@ -90,10 +108,11 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
           schema: 'public',
           table: 'bin',
           callback: (payload) async {
+            if (!mounted) return;
+
             final updatedBin = payload.newRecord;
             final updatedBinId = updatedBin['bin_id']?.toString();
             // If the updated bin is in the janitor's allocated bins, refresh the bin list
-            if (!mounted) return;
 
             if (updatedBinId != null && myBinsIDs.contains(updatedBinId)) {
               await loadBins();
@@ -103,24 +122,21 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
         .subscribe();
   }
 
-  // listen for app lifecycle changes
+  // refresh the dashboard if janitor switched to another app and back
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && mounted) {
-      // App has come to the foreground
-      realTimeUpdates();
+      updateDashboardRealTime();
     }
   }
 
-  // init state to setup real-time updates
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    realTimeUpdates();
+    updateDashboardRealTime();
   }
 
-  // dispose to remove channel subscription
   @override
   void dispose() {
     if (channel != null) {
@@ -138,6 +154,12 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
         .where((bin) => bin['bin_status'] == 'Full')
         .length
         .toString();
+    List<Map<String, dynamic>> filteredBins = bins;
+
+    if (selectedBinCard == 'attention') {
+      filteredBins = bins.where((bin) => bin['bin_status'] == 'Full').toList();
+    }
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -224,7 +246,7 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                           ),
                           IconButton(
                             tooltip: 'Refresh',
-                            padding: EdgeInsets.all(0),
+                            padding: EdgeInsets.zero,
                             onPressed: () {
                               loadBins();
                             },
@@ -241,49 +263,39 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
               ),
             ),
           ),
-          //tiles for each bin with status info
+
+          // tiles for each bin with status info
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             sliver: SliverToBoxAdapter(
-              child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: getAssignedBins(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+              child: Builder(
+                builder: (context) {
+                  if (pageIsLoading) {
                     return const Padding(
                       padding: EdgeInsets.all(20.0),
                       child: Center(child: CircularProgressIndicator()),
                     );
                   }
-                  if (snapshot.hasError) {
-                    debugPrint(snapshot.error.toString());
+
+                  if (errorMessage != null) {
                     return Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Center(
                         child: Text(
-                          'Error loading bins: ${snapshot.error}',
+                          errorMessage!,
                           style: const TextStyle(color: Colors.red),
                         ),
                       ),
                     );
                   }
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+
+                  if (bins.isEmpty) {
                     return const Padding(
                       padding: EdgeInsets.only(top: 20.0),
                       child: Center(child: Text('No bins found.')),
                     );
                   }
-                  final bins = List<Map<String, dynamic>>.from(snapshot.data!);
 
-                  // sort bins in descending fill level
-                  sortBinsByFillLevel(bins);
-
-                  List<Map<String, dynamic>> filteredBins = bins;
-
-                  if (selectedBinCard == 'attention') {
-                    filteredBins = bins
-                        .where((bin) => bin['bin_status'] == 'Full')
-                        .toList();
-                  }
                   if (filteredBins.isEmpty) {
                     return const Padding(
                       padding: EdgeInsets.only(top: 20.0),
@@ -301,7 +313,8 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
                         binFillLevel: bin['fill_level'] ?? 0,
                         binLocation:
                             '${bin['floor']?['building']?['building_name'] ?? 'Unknown Building'}, ${bin['floor']?['floor_label'] ?? 'Unknown Floor'}',
-                        deviceProblemLabel: getDeviceProblemLabel(bin),
+                        binDeviceStatus: getDeviceStatus(bin),
+                        onReturnFromBinInfo: loadBins,
                       );
                     }),
                   );

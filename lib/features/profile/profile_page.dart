@@ -55,6 +55,7 @@ class _ProfilePageState extends State<ProfilePage> {
         .where((p) => p.isNotEmpty)
         .toList();
 
+    // If no valid parts, return 'U' for User
     if (parts.isEmpty) return 'U';
     if (parts.length == 1) return parts.first.characters.first.toUpperCase();
 

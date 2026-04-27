@@ -29,6 +29,7 @@ class BinFrequencyData {
         binListIds.add(binId);
         binIdToName[binId] = bin['bin_name']?.toString() ?? 'Unknown';
       }
+      // managers see all bin activity, janitors only see their own assigned bins
     } else if (role == 'janitor') {
       final allocatedBins = await supabase
           .from('bin_assignment')
@@ -52,7 +53,10 @@ class BinFrequencyData {
         .from('notification_event')
         .select('bin_id, created_at')
         .inFilter('bin_id', binListIds)
-        .gte('created_at', since.toIso8601String()); // Filter by date
+        .gte(
+          'created_at',
+          since.toIso8601String(),
+        ); //only count events within the selected time frame
 
     final Map<String, int> binFrequency = {};
 

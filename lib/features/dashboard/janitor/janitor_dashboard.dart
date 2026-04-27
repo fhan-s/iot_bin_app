@@ -5,6 +5,7 @@ import 'package:iot_bin_app/features/dashboard/janitor/dashboard_bins.dart';
 import 'package:iot_bin_app/features/profile/profile_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:async';
 
 class JanitorDashboardPage extends StatefulWidget {
   const JanitorDashboardPage({super.key});
@@ -15,60 +16,14 @@ class JanitorDashboardPage extends StatefulWidget {
 
 class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
   final supabase = Supabase.instance.client;
+
+  //default is dashboard page
   int selectedIndex = 0;
-  @override
-  void initState() {
-    super.initState();
 
-    if (supabase.auth.currentUser != null) {
-      supabase.auth.onAuthStateChange.listen((event) async {
-        // when user signs in, request FCM notification permission and get token
-        if (event.event == AuthChangeEvent.signedIn) {
-          await FirebaseMessaging.instance.requestPermission();
-          final fcmToken = await FirebaseMessaging.instance.getToken();
-          if (fcmToken != null) {
-            // Store the FCM token in the database
-            await setFcmToken(fcmToken);
-          }
-        }
-      });
-    }
-    // listens for FCM token refreshes
-    FirebaseMessaging.instance.onTokenRefresh.listen((fcmtoken) async {
-      // Update the stored FCM token in the database
-      await setFcmToken(fcmtoken);
-    });
-    // listens for incoming messages while the app is in the foreground
-    FirebaseMessaging.onMessage.listen((payload) {
-      if (!mounted) return;
-      final notification = payload.notification;
-      if (notification != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${notification.title}: ${notification.body}'),
-          ),
-        );
-      }
-    });
-  }
+  StreamSubscription? authSubscription;
+  StreamSubscription? tokenRefreshSubscription;
+  StreamSubscription? snackbarMessageSubscription;
 
-  // helper function to store FCM token in the database
-  Future<void> setFcmToken(String fcmToken) async {
-    final userId = supabase.auth.currentUser?.id;
-    if (userId != null) {
-      await supabase.from('fcm_push_token').upsert({
-        'user_id': userId,
-        'fcm_token': fcmToken,
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  // returns the selected page based on the selected index
   Widget getSelectedPage() {
     switch (selectedIndex) {
       case 0:
@@ -82,7 +37,7 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
     }
   }
 
-  String getTitle() {
+  String getPageTitle() {
     switch (selectedIndex) {
       case 0:
         return 'Janitor Dashboard';
@@ -95,6 +50,62 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
     }
   }
 
+  // store FCM token in the database
+  Future<void> setFcmToken(String fcmToken) async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId != null) {
+      await supabase.from('fcm_push_token').upsert({
+        'user_id': userId,
+        'fcm_token': fcmToken,
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (supabase.auth.currentUser != null) {
+      authSubscription = supabase.auth.onAuthStateChange.listen((event) async {
+        // when janitor logs in, request new FCM token
+        if (event.event == AuthChangeEvent.signedIn) {
+          await FirebaseMessaging.instance.requestPermission();
+          final fcmToken = await FirebaseMessaging.instance.getToken();
+          if (fcmToken != null) {
+            // Store the FCM token in the database
+            await setFcmToken(fcmToken);
+          }
+        }
+      });
+    }
+
+    // FCM refreshes tokens periodically, so listen for token refresh events then update the database
+    tokenRefreshSubscription = FirebaseMessaging.instance.onTokenRefresh.listen(
+      (fcmtoken) async {
+        await setFcmToken(fcmtoken);
+      },
+    );
+    // if app is in the foreground, display incoming bin alerts as snackbars
+    snackbarMessageSubscription = FirebaseMessaging.onMessage.listen((payload) {
+      if (!mounted) return;
+      final notification = payload.notification;
+      if (notification != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${notification.title}: ${notification.body}'),
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    authSubscription?.cancel();
+    tokenRefreshSubscription?.cancel();
+    snackbarMessageSubscription?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final appColourScheme = Theme.of(context).colorScheme;
@@ -102,7 +113,7 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
       // app bar with title and profile button
       backgroundColor: appColourScheme.surfaceContainerHighest,
       appBar: AppBar(
-        title: Text(getTitle()),
+        title: Text(getPageTitle()),
         centerTitle: false,
         actions: [
           IconButton(
@@ -122,9 +133,7 @@ class _JanitorDashboardPageState extends State<JanitorDashboardPage> {
         duration: const Duration(milliseconds: 250),
         child: getSelectedPage(),
       ),
-      // bottom navigation bar to switch between pages
       bottomNavigationBar: BottomNavigationBar(
-        // uses the first index (0) as the default selected page
         currentIndex: selectedIndex,
         onTap: (index) => setState(() => selectedIndex = index),
         items: const <BottomNavigationBarItem>[

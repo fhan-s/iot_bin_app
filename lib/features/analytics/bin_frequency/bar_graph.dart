@@ -12,16 +12,20 @@ class MyBarChart extends StatelessWidget {
       return const Center(child: Text('No data in this time range.'));
     }
 
-    // Sort by highest first
+    // most frequently full bins appear on the left on horizontal axis, least frequent on the right
     final entries = counts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    // Use the highest value for chart scaling
+    // Use the highest value for chart scaling.
+    // Tenary operator if no entries then make max y 0. Otherwise  use first entry value
     final maxY = entries.isEmpty ? 0.0 : entries.first.value.toDouble();
 
     return BarChart(
       BarChartData(
+        // add 1 to the y so the tallest bar doesn't touch the top of the chart, fallback to 1 if chart empty
         maxY: (maxY == 0) ? 1 : maxY + 1,
+
+        // used FlGridData template
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
@@ -35,8 +39,7 @@ class MyBarChart extends StatelessWidget {
         ),
         barTouchData: BarTouchData(
           touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (group) =>
-                const Color.fromARGB(255, 255, 255, 255),
+            getTooltipColor: (group) => Colors.white,
           ),
         ),
         borderData: FlBorderData(show: false),

@@ -34,7 +34,7 @@ class BinFillIcon extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // The bin icon with fill effect
+          // bin icon with fill effect
           ShaderMask(
             blendMode: BlendMode.srcIn,
             shaderCallback: (Rect bounds) {

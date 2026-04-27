@@ -4,7 +4,7 @@ import 'package:iot_bin_app/features/dashboard/manager/manager_dashboard.dart';
 import 'package:iot_bin_app/features/login/login_page.dart';
 import 'package:iot_bin_app/features/maps/map_page.dart';
 import 'package:iot_bin_app/features/analytics/analytic_view.dart';
-import 'package:iot_bin_app/features/dashboard/bin%20information/bin_information.dart';
+import 'package:iot_bin_app/features/dashboard/bin_information/bin_information.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',

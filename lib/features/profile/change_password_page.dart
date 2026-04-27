@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:iot_bin_app/features/profile/profile_service.dart';
 
 class ChangePasswordPage extends StatefulWidget {

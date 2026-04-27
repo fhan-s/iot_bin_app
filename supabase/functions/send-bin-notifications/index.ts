@@ -1,8 +1,21 @@
+/*
+W1975147 - Mohammad Salik
+Code reference: https://supabase.com/docs/guides/functions/examples/push-notifications?queryGroups=platform&platform=fcm
+
+
+Edge function is trigged via a webhook when a new bin status is inserted/updated.
+
+The Edge function looks up the bin name, the janitor assigned to that bin and the janitor’s FCM device token(s)
+A Firebase access token is generated using a service account and a push notification is sent via FCM to the janitor’s device.
+
+
+*/
+
 import { createClient } from "@supabase/supabase-js"
 import { JWT } from "google-auth-library";
 console.log("Supabase Functions send-bin-notifications function loaded");
 
-// defines the structure of the notification payload from Supabase
+// defines the structure of the notification payload from webhook
 interface NotifcationWebhookPayload {
     created_at?: string
     bin_id?: string
@@ -20,15 +33,15 @@ type SupabaseWebhookPayload = {
 };
 
 
-// Initialize Supabase client with service role key
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 )
-
-// Load Firebase service account from supabase --> edge function --> secrets (environment variables)
 const serviceAccountJSON = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON")!;
 const serviceAccount= JSON.parse(serviceAccountJSON);
+
+// Fix newline characters in private key
+serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
 
 console.log("Firebase project:", serviceAccount.project_id);
 console.log("PK header ok:", serviceAccount.private_key.includes("BEGIN PRIVATE KEY"));
@@ -38,7 +51,7 @@ Deno.serve(async (req) => {
   try {
     const payload: SupabaseWebhookPayload = await req.json();
 
-    // get bin name from bin table
+    // get bin name from bin table to be used in notification message
     const {data: binName, error: binError} = await supabase
     .from('bin')
     .select('bin_name')
@@ -46,7 +59,7 @@ Deno.serve(async (req) => {
     .single();
     if (binError) throw binError;
 
-    // find janitor assigned to this full bin in bin_assignment table
+    // find janitor assigned to this full bin
     const {data: assignments, error: assignmentError} = await supabase
     .from('bin_assignment')
     .select('janitor_id')
@@ -54,7 +67,7 @@ Deno.serve(async (req) => {
     .single();
     if (assignmentError) throw assignmentError;
 
-    // get all fcm tokens for the janitor
+    // get all fcm tokens linked to that  janitor
     const {data: tokensData, error: tokensError} = await supabase
     .from('fcm_push_token')
     .select('user_id, fcm_token')
@@ -63,76 +76,79 @@ Deno.serve(async (req) => {
     if (tokensError) throw tokensError;
   
 
-    // get access token for firebase project
+    // get OAuth access token for firebase api
     const accessToken = await getAccessToken({
       clientEmail: serviceAccount.client_email,
       privateKey: serviceAccount.private_key,
     });
 
-    // send notification to each token that belongs to the janitor
-    // for (const fcmToken of tokensData?.map(t => t.fcm_token) ?? []) {
-    // const response = await fetch(`https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     Authorization: `Bearer ${accessToken}`,
-    //   },
-    //   body: JSON.stringify({
-    //     message: {
-    //       token: fcmToken,
-    //       notification: {
-    //         title: 'Bin Alert',
-    //         body: `Attention!: Bin: "${binName?.bin_name}" is ${payload.record?.fill_level}% full.`,
-    //       },
-    //     },
-    //   }),
-    // });
-    
-    // // Check response status
-    // const resData = await response.json();
-    // if (response.status < 200 || response.status >= 300) {
-    //   throw resData;
-    // }
-    // }
+    const tokens = (tokensData ?? [])
+    .map((row) => row.fcm_token)
+    .filter(Boolean);
 
-
-    // send notification to the first token (for testing purposes)
-    const response = await fetch(`https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        message: {
-          token: tokensData?.[0]?.fcm_token,
-          notification: {
-            title: 'Bin Alert',
-            body: `Attention!: Bin: "${binName?.bin_name}" is ${payload.record?.fill_level}% full.`,
-          },
-        },
-      }),
-    });
-    
-    // Check response status
-    const resData = await response.json();
-    if (response.status < 200 || response.status >= 300) {
-      throw resData;
+    if (tokens.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No FCM tokens found for assigned janitor" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
+
+    const results = [];
+
+    // send to all device tokens associated with janitor.
+    for (const token of tokens) {
+      const response = await fetch(
+        `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            message: {
+              token,
+              notification: {
+                title: "Bin Alert",
+                body: `Attention!: Bin: "${binName?.bin_name}" is ${payload.record?.fill_level}% full.`,
+              },
+            },
+          }),
+        }
+      );
+
+      const resData = await response.json();
+
+      results.push({
+        token,
+        ok: response.ok,
+        status: response.status,
+        data: resData,
+      });
+    }
+    const successCount = results.filter((r) => r.ok).length;
+    const failureCount = results.length - successCount;
+
     return new Response(
-      JSON.stringify({ message: "Notification sent successfully" }),
-      { status: 200 },
-    )
+      JSON.stringify({
+        message: "Notification send attempt completed",
+        successCount,
+        failureCount,
+        results,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+    
   } catch (error) {
-    console.error("Error sending notification:", error);
+    console.error("Error sending notifications:", error);
     return new Response(
-      JSON.stringify({ error: "Failed to send notification", details: error }),
+      JSON.stringify({ error: "Failed to send notifications", details: error }),
       { status: 500, headers : { "Content-Type": "application/json" } },
     )
   }
 })
 
-// Function to get access token for Firebase Cloud Messaging
+// Get access token for Firebase Cloud Messaging
 const getAccessToken = ({
   clientEmail,
   privateKey,

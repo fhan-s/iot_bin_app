@@ -5,6 +5,7 @@ import 'package:iot_bin_app/features/profile/profile_page.dart';
 import 'package:iot_bin_app/features/maps/map_page.dart';
 import 'package:iot_bin_app/features/analytics/analytic_view.dart';
 import 'package:iot_bin_app/features/dashboard/manager/dashboard_bins.dart';
+import 'dart:async';
 
 class ManagerDashboardPage extends StatefulWidget {
   const ManagerDashboardPage({super.key});
@@ -15,61 +16,13 @@ class ManagerDashboardPage extends StatefulWidget {
 
 class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   final supabase = Supabase.instance.client;
+
+  //default is dashboard page
   int selectedIndex = 0;
-  @override
-  void initState() {
-    super.initState();
 
-    if (supabase.auth.currentUser != null) {
-      supabase.auth.onAuthStateChange.listen((event) async {
-        // when user signs in, request FCM notification permission and get token
-        if (event.event == AuthChangeEvent.signedIn) {
-          await FirebaseMessaging.instance.requestPermission();
-          final fcmToken = await FirebaseMessaging.instance.getToken();
-          if (fcmToken != null) {
-            // Store the FCM token in the database
-            await setFcmToken(fcmToken);
-          }
-        }
-      });
-    }
-    // listens for FCM token refreshes
-    FirebaseMessaging.instance.onTokenRefresh.listen((fcmtoken) async {
-      // Update the stored FCM token in the database
-      await setFcmToken(fcmtoken);
-    });
-    // listens for incoming messages while the app is in the foreground
-    FirebaseMessaging.onMessage.listen((payload) {
-      if (!mounted) return;
-      final notification = payload.notification;
-      if (notification != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${notification.title}: ${notification.body}'),
-          ),
-        );
-      }
-    });
-  }
-
-  Future<void> setFcmToken(String fcmToken) async {
-    final userId = supabase.auth.currentUser?.id;
-    if (userId != null) {
-      await supabase.from('fcm_push_token').upsert({
-        'user_id': userId,
-        'fcm_token': fcmToken,
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  Future<void> logout() async {
-    await supabase.auth.signOut();
-  }
+  StreamSubscription? authSubscription;
+  StreamSubscription? tokenRefreshSubscription;
+  StreamSubscription? snackbarMessageSubscription;
 
   Widget getSelectedPage() {
     switch (selectedIndex) {
@@ -84,7 +37,7 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
     }
   }
 
-  String getTitle() {
+  String getPageTitle() {
     switch (selectedIndex) {
       case 0:
         return 'Manager Dashboard';
@@ -97,6 +50,63 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
     }
   }
 
+  Future<void> setFcmToken(String fcmToken) async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId != null) {
+      await supabase.from('fcm_push_token').upsert({
+        'user_id': userId,
+        'fcm_token': fcmToken,
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (supabase.auth.currentUser != null) {
+      authSubscription = supabase.auth.onAuthStateChange.listen((event) async {
+        // when manager logs in, request new FCM token
+        if (event.event == AuthChangeEvent.signedIn) {
+          await FirebaseMessaging.instance.requestPermission();
+          final fcmToken = await FirebaseMessaging.instance.getToken();
+          if (fcmToken != null) {
+            // Store the FCM token in the database
+            await setFcmToken(fcmToken);
+          }
+        }
+      });
+    }
+
+    // FCM refreshes tokens periodically, so listen for token refresh events then update the database
+    tokenRefreshSubscription = FirebaseMessaging.instance.onTokenRefresh.listen(
+      (fcmtoken) async {
+        await setFcmToken(fcmtoken);
+      },
+    );
+
+    // if app is in the foreground, display incoming bin alerts as snackbars
+    snackbarMessageSubscription = FirebaseMessaging.onMessage.listen((payload) {
+      if (!mounted) return;
+      final notification = payload.notification;
+      if (notification != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${notification.title}: ${notification.body}'),
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    authSubscription?.cancel();
+    tokenRefreshSubscription?.cancel();
+    snackbarMessageSubscription?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final appColourScheme = Theme.of(context).colorScheme;
@@ -104,7 +114,7 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
       // app bar with title and profile button
       backgroundColor: appColourScheme.surfaceContainerHighest,
       appBar: AppBar(
-        title: Text(getTitle()),
+        title: Text(getPageTitle()),
         centerTitle: false,
         actions: [
           IconButton(

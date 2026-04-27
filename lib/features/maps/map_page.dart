@@ -24,15 +24,16 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
   String? editingBinId;
   final Map<String, Offset> draftPositions = {};
   bool isSavingPosition = false;
+  late final RealtimeChannel channel;
 
   Future<List<BinMapIcon>> getBins() async {
     if (selectedBuildingId == null || selectedFloorId == null) return [];
 
-    final data = await supabase
+    final binData = await supabase
         .from('bin')
         .select('bin_id, bin_name, bin_status, fill_level, pos_x, pos_y')
         .eq('floor_id', selectedFloorId!);
-    return (data as List)
+    return (binData as List)
         .map((row) {
           if (row == null) return null;
           if (row['pos_x'] == null || row['pos_y'] == null) return null;
@@ -142,7 +143,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
         child: GestureDetector(
           onTap: () {
             if (!isEditing) {
-              _showBinDetails(bin);
+              showBinDetails(bin);
             }
           },
           onPanUpdate: isEditing
@@ -176,7 +177,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
             label: bin.name,
             onTap: () {
               if (!isEditing) {
-                _showBinDetails(bin);
+                showBinDetails(bin);
               }
             },
           ),
@@ -290,10 +291,11 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
     });
   }
 
-  void _showBinDetails(BinMapIcon bin) {
+  void showBinDetails(BinMapIcon bin) {
     if (!mounted) return;
     setState(() => selectedBinId = bin.id);
 
+    // when a bin marker is tapped, show a bottom sheet with the bin details and an option to move the bin if the user role is a manager
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
@@ -364,8 +366,6 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
       },
     );
   }
-
-  late final RealtimeChannel channel;
 
   @override
   void initState() {
@@ -456,15 +456,15 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                         child: Text(f['floor_label'] ?? 'Floor'),
                       );
                     }).toList(),
-                    onChanged: (value) {
+                    onChanged: (floorValue) {
                       final selectedFloor = floorList.firstWhere(
-                        (f) => f['floor_id'] == value,
+                        (f) => f['floor_id'] == floorValue,
                         orElse: () => <String, dynamic>{},
                       );
 
                       if (!mounted) return;
                       setState(() {
-                        selectedFloorId = value;
+                        selectedFloorId = floorValue;
                         selectedBinId = null;
                         editingBinId = null;
                         draftPositions.clear();
@@ -473,7 +473,8 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                           selectedFloor['floor_label']?.toString(),
                         );
 
-                        binsFuture = value != null ? getBins() : null;
+                        //if floor is not null then fetch bins for the selected floor otherwise set binsFuture to null
+                        binsFuture = floorValue != null ? getBins() : null;
                       });
                     },
                   ),
@@ -482,7 +483,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
             ),
             const SizedBox(height: 12),
 
-            // The map area
+            // Map
             Expanded(
               child: FutureBuilder<List<BinMapIcon>>(
                 future: binsFuture,

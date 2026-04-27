@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:iot_bin_app/features/dashboard/bin%20information/bin_information.dart';
+
+import 'package:iot_bin_app/features/dashboard/bin_information/bin_information.dart';
 import 'package:iot_bin_app/features/dashboard/widgets/bin_fill_icon.dart';
-import 'package:iot_bin_app/features/dashboard/widgets/deviceError.dart';
+import 'package:iot_bin_app/features/dashboard/widgets/device_error.dart';
 
 class BinListTile extends StatelessWidget {
   const BinListTile({
@@ -13,7 +14,8 @@ class BinListTile extends StatelessWidget {
     required this.binLocation,
     this.assignedTo,
     this.onAssignPressed,
-    this.deviceProblemLabel,
+    this.binDeviceStatus,
+    this.onReturnFromBinInfo,
   });
 
   final String binId;
@@ -22,8 +24,9 @@ class BinListTile extends StatelessWidget {
   final int binFillLevel;
   final String binLocation;
   final String? assignedTo;
-  final String? deviceProblemLabel;
+  final String? binDeviceStatus;
   final VoidCallback? onAssignPressed;
+  final VoidCallback? onReturnFromBinInfo;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +47,7 @@ class BinListTile extends StatelessWidget {
             MaterialPageRoute(
               builder: (context) => BinInformationPage(binId: binId),
             ),
-          );
+          ).then((_) => onReturnFromBinInfo?.call());
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -66,12 +69,10 @@ class BinListTile extends StatelessWidget {
                     Text(binStatus),
                     Text(binLocation),
 
-                    if (assignedTo != null) ...[
-                      Text('Assigned To: $assignedTo'),
-                    ],
-                    if (deviceProblemLabel != null) ...[
+                    if (assignedTo != null) Text('Assigned To: $assignedTo'),
+                    if (binDeviceStatus != null) ...[
                       const SizedBox(height: 6),
-                      DeviceStatusError(label: deviceProblemLabel!),
+                      DeviceStatusError(label: binDeviceStatus!),
                     ],
                     const SizedBox(height: 4),
                   ],

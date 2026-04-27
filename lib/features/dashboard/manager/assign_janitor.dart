@@ -12,7 +12,9 @@ class AssignJanitorBin extends StatefulWidget {
 
 class _AssignJanitorBinState extends State<AssignJanitorBin> {
   final supabase = Supabase.instance.client;
-  bool isLoading = true;
+  bool pageIsLoading = true;
+  String? errorMessage;
+
   List<Map<String, dynamic>> janitors = [];
 
   @override
@@ -22,39 +24,44 @@ class _AssignJanitorBinState extends State<AssignJanitorBin> {
   }
 
   Future<void> getJanitors() async {
-    final janitorData = await supabase
-        .from('janitorial_staff')
-        .select('''
+    try {
+      final janitorData = await supabase
+          .from('janitorial_staff')
+          .select('''
         id,
         full_name,
         bin_assignment (
           bin_id
         )
       ''')
-        .eq('role', 'janitor');
+          .eq('role', 'janitor');
 
-    final processed = List<Map<String, dynamic>>.from(janitorData).map((
-      janitor,
-    ) {
-      final assignments = janitor['bin_assignment'];
+      final processed = List<Map<String, dynamic>>.from(janitorData).map((
+        janitor,
+      ) {
+        final assignments = janitor['bin_assignment'];
 
-      int count = 0;
+        final count = assignments?.length ?? 0;
 
-      if (assignments != null) {
-        count = assignments.length;
-      }
-      return {
-        'id': janitor['id'],
-        'full_name': janitor['full_name'],
-        'allocated_bins': count,
-      };
-    }).toList();
+        return {
+          'id': janitor['id'],
+          'full_name': janitor['full_name'],
+          'allocated_bins': count,
+        };
+      }).toList();
 
-    if (!mounted) return;
-    setState(() {
-      janitors = processed;
-      isLoading = false;
-    });
+      if (!mounted) return;
+      setState(() {
+        janitors = processed;
+        pageIsLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        pageIsLoading = false;
+        errorMessage = e.toString();
+      });
+    }
   }
 
   Future<void> assignJanitor(String janitorId) async {
@@ -67,10 +74,9 @@ class _AssignJanitorBinState extends State<AssignJanitorBin> {
     Navigator.pop(context, true);
   }
 
-  // UI for assigning janitor to bin
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
+    if (pageIsLoading) {
       return Container(
         height: 250,
         alignment: Alignment.center,
@@ -96,7 +102,9 @@ class _AssignJanitorBinState extends State<AssignJanitorBin> {
 
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: const Color.fromARGB(255, 216, 215, 215),
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                     child: Icon(Icons.person_2),
                   ),
                   title: Text(janitor['full_name'] ?? 'Unnamed Janitor'),

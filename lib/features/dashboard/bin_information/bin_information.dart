@@ -19,28 +19,13 @@ class _BinInformationPageState extends State<BinInformationPage> {
     final binData = await supabase
         .from('bin')
         .select(
-          ' bin_name, bin_status, fill_level, floor:floor_id ( floor_label, building:building_id (building_name) ), device:sensor_device ( device_id, device_name, device_serial_number, device_status, last_seen_at, battery_level )',
+          'bin_name, bin_status, fill_level, last_reading_at, floor:floor_id ( floor_label, building:building_id (building_name) ), device:sensor_device ( device_id, device_name, device_serial_number, device_status, last_seen_at, battery_level )',
         )
         .eq('bin_id', widget.binId)
         .single();
     return Map<String, dynamic>.from(binData);
   }
 
-  // String getLiveDeviceStatus(String? lastSeenAt) {
-  //   if (lastSeenAt == null) return 'Offline null';
-
-  //   final lastSeen = DateTime.tryParse(lastSeenAt);
-  //   if (lastSeen == null) return 'Offline null';
-
-  //   final difference = DateTime.now().difference(lastSeen.toLocal());
-
-  //   // Consider device online if last seen within the past 5 days (432000 seconds)
-  //   if (difference.inSeconds <= 432000) {
-  //     return 'Online';
-  //   } else {
-  //     return 'Offline Long';
-  //   }
-  // }
   bool isDeviceOnline(Map<String, dynamic>? device) {
     if (device == null) return false;
 
@@ -56,6 +41,13 @@ class _BinInformationPageState extends State<BinInformationPage> {
 
     if (!mounted) return;
     setState(() {});
+  }
+
+  String formatTime(String isoString) {
+    final dt = DateTime.parse(isoString).toLocal();
+    return '${dt.day}/${dt.month}/${dt.year} '
+        '${dt.hour.toString().padLeft(2, '0')}:'
+        '${dt.minute.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -80,6 +72,7 @@ class _BinInformationPageState extends State<BinInformationPage> {
           final binName = binInfo['bin_name'];
           final binStatus = binInfo['bin_status'];
           final binFillLevel = binInfo['fill_level'];
+          final lastReadingAt = binInfo['last_reading_at'];
 
           final floor = binInfo['floor'] as Map<String, dynamic>?;
           final floorLabel =
@@ -106,8 +99,7 @@ class _BinInformationPageState extends State<BinInformationPage> {
           final deviceStatus = device?['device_status'];
           final deviceId = device?['device_id'].toString();
           final bool deviceOnline = isDeviceOnline(device);
-          // final deviceLastSeenAt = device?['last_seen_at']?.toString();
-          // final deviceLiveStatus = getLiveDeviceStatus(deviceLastSeenAt);
+
           final batteryLevel = device?['battery_level'];
 
           return SingleChildScrollView(
@@ -118,7 +110,7 @@ class _BinInformationPageState extends State<BinInformationPage> {
                 Card(
                   color: colorScheme.surface,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(10),
                     side: BorderSide(color: colorScheme.outlineVariant),
                   ),
                   child: Padding(
@@ -126,7 +118,7 @@ class _BinInformationPageState extends State<BinInformationPage> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        BinFillIcon(fillLevel: binFillLevel, size: 64),
+                        BinFillIcon(fillLevel: binFillLevel, size: 96),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Column(
@@ -135,7 +127,7 @@ class _BinInformationPageState extends State<BinInformationPage> {
                               Text(
                                 binName,
                                 style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.w600),
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 6),
                               Text(
@@ -171,6 +163,15 @@ class _BinInformationPageState extends State<BinInformationPage> {
                                       ],
                                     ),
                                     const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.update, size: 18),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Last Updated: ${formatTime(lastReadingAt)}',
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 )
                               else
@@ -206,7 +207,7 @@ class _BinInformationPageState extends State<BinInformationPage> {
                   elevation: 0,
                   color: colorScheme.surface,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(10),
                     side: BorderSide(color: colorScheme.outlineVariant),
                   ),
                   child: Padding(
@@ -253,19 +254,6 @@ class _BinInformationPageState extends State<BinInformationPage> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    // if (deviceOnline) ...[
-                    //   Expanded(
-                    //     child: FilledButton.icon(
-                    //       onPressed: () {
-                    //         // optional future action
-                    //       },
-                    //       icon: const Icon(Icons.refresh),
-                    //       label: const Text('Check Now'),
-                    //     ),
-                    //   ),
-                    //   const SizedBox(width: 10),
-                    // ],
-                    // Button to toggle turn off device if online, turn on device if offline
                     Expanded(
                       child: deviceOnline
                           ? OutlinedButton.icon(

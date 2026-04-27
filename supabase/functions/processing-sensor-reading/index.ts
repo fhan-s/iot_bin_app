@@ -1,17 +1,19 @@
 
 
 /*
-This edge function looks in sensor_device table for device_serial_number eg = "ESP32-BIN-001".
-if serial number found or matches, use that row’s device_id
-if serial number not found, insert a new row and get the new device_id
-ESP32 never needs to know the sensor device primary key directly from arduino code.
-test
+W1975147 - Mohammad Salik
+
+The sensor_device table is searched using device serial number sent from esp32
+if device serial number exists, use that row’s device_id to find associated bin id to store reading,
+The ESP32 only sends its serial number for identification and never needs to know database primary keys.
+
 */
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 Deno.serve(async (req) => {
   try {
+    //allow only post requests from esp
     if (req.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 })
     }
@@ -23,6 +25,7 @@ Deno.serve(async (req) => {
       battery_level
     } = body
 
+    //return error for missing fields
     if (!device_serial_number || raw_distance_cm === undefined) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
@@ -33,9 +36,10 @@ Deno.serve(async (req) => {
       )
     }
 
+    // distance value must be valid, return error if invalid
     if (raw_distance_cm <= 0) {
       return new Response(
-        JSON.stringify({ error: 'raw_distance_cm must be > 0' }),
+        JSON.stringify({ error: 'raw_distance_cm cannot be less than 0' }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' }
@@ -43,6 +47,7 @@ Deno.serve(async (req) => {
       )
     }
 
+    // request token must match with secret token so only trusted devices can submit readings.  
     const expectedToken = Deno.env.get('DEVICE_SHARED_TOKEN')
     const sentToken = req.headers.get('x-device-token')
 
@@ -61,9 +66,10 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
+    // find matching serial number from sensor_device table. Retrieve device and bin id from row.
     const { data: deviceRows, error: deviceError } = await supabase
       .from('sensor_device')
-      .select('device_id, bin_id')
+      .select('device_id, bin:bin_id (bin_height_cm)')
       .eq('device_serial_number', device_serial_number)
       .limit(1)
 
@@ -88,7 +94,21 @@ Deno.serve(async (req) => {
     }
 
     const device_id = deviceRows[0].device_id
-    const fill_level = Math.abs(Math.floor(raw_distance_cm)) % 100
+    const bin_height = deviceRows[0].bin?.[0]?.bin_height_cm
+
+    if (!bin_height || bin_height <= 0) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid bin height configuration' }),
+        {
+          status: 500, headers: { 'Content-Type': 'application/json'}}
+      )
+    }
+
+
+    //converting raw distance to fill level using formula below
+    const fill_ratio = (bin_height - raw_distance_cm) / bin_height
+    const fill_level = Math.max(0, Math.min(100, Math.round(fill_ratio * 100)))//default to 0 prevent value errors
+
 
     const { error: readingError } = await supabase
       .from('sensor_reading')
@@ -110,14 +130,26 @@ Deno.serve(async (req) => {
       )
     }
 
-    await supabase
-      .from('sensor_device')
-      .update({
-        device_status: 'online',
-        latest_battery_level: battery_level ?? 0
-      })
-      .eq('device_id', device_id)
+  const { error: deviceUpdateError } = await supabase
+  .from('sensor_device')
+  .update({
+    device_status: 'online',
+    last_seen_at: new Date().toISOString()
+    })
+    .eq('device_id', device_id)
 
+  if (deviceUpdateError) {
+    return new Response(
+      JSON.stringify({
+        error: 'Failed to update sensor device',
+        details: deviceUpdateError
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
+    }   
     return new Response(
       JSON.stringify({
         success: true,

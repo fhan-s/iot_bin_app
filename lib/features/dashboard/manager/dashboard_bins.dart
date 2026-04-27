@@ -15,11 +15,13 @@ class ManagerDashboardBinsPage extends StatefulWidget {
 class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
     with WidgetsBindingObserver {
   final supabase = Supabase.instance.client;
-  String selectedBinCard = 'all';
 
+  String selectedBinCard = 'all';
   RealtimeChannel? channel;
   List<Map<String, dynamic>> bins = [];
-  Set<String> myBinsIDs = {};
+  Set<String> allBinIDs = {};
+  bool pageIsLoading = true;
+  String? errorMessage;
 
   //fetch manager's allocated bins from bin_assignment table
   Future<List<Map<String, dynamic>>> getAllBins() async {
@@ -49,7 +51,7 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
     return List<Map<String, dynamic>>.from(binData);
   }
 
-  sortBinsByFillLevel(List<Map<String, dynamic>> bins) {
+  void sortBinsByFillLevel(List<Map<String, dynamic>> bins) {
     bins.sort((a, b) {
       final fillA = (a['fill_level'] ?? 0) as int;
       final fillB = (b['fill_level'] ?? 0) as int;
@@ -57,19 +59,7 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
     });
   }
 
-  Future<void> loadBins() async {
-    final loadedBins = await getAllBins();
-
-    // sort bins in descending fill level
-    sortBinsByFillLevel(loadedBins);
-
-    setState(() {
-      bins = loadedBins;
-      myBinsIDs = bins.map((bin) => bin['bin_id'].toString()).toSet();
-    });
-  }
-
-  String? getDeviceProblemLabel(Map<String, dynamic> bin) {
+  String? getDeviceStatus(Map<String, dynamic> bin) {
     final sensor = bin['sensor_device'];
 
     if (sensor == null) {
@@ -85,20 +75,47 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
     return null;
   }
 
-  Future<void> realTimeUpdates() async {
+  Future<void> loadBins() async {
+    if (!mounted) return;
+
+    setState(() {
+      pageIsLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final loadedBins = await getAllBins();
+
+      if (!mounted) return;
+
+      // sort bins in descending fill level
+      sortBinsByFillLevel(loadedBins);
+
+      setState(() {
+        bins = loadedBins;
+        allBinIDs = bins.map((bin) => bin['bin_id'].toString()).toSet();
+        pageIsLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        errorMessage = 'Failed to load bins. Error: $e';
+        pageIsLoading = false;
+      });
+    }
+  }
+
+  Future<void> updateDashboardRealTime() async {
     //load and get all manager allocated bins first
     await loadBins();
 
-    //get bin IDs
-    myBinsIDs = (await getAllBins())
-        .map((bin) => bin['bin_id'].toString())
-        .toSet();
+    if (!mounted) return;
 
     if (channel != null) {
       supabase.removeChannel(channel!);
     }
-    // //subscribe to real-time updates for the manager's bins
-    channel = supabase.channel('realtime_bins_channel');
+    //subscribe to real-time updates for the manager's bins
+    channel = supabase.channel('bin_updates_channel');
 
     //listen for updates on the bin table
     channel!
@@ -107,10 +124,12 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
           schema: 'public',
           table: 'bin',
           callback: (payload) async {
+            if (!mounted) return;
+
             final updatedBin = payload.newRecord;
             final updatedBinId = updatedBin['bin_id']?.toString();
             // If the updated bin is in the manager's allocated bins, refresh the bin list
-            if (updatedBinId != null && myBinsIDs.contains(updatedBinId)) {
+            if (updatedBinId != null && allBinIDs.contains(updatedBinId)) {
               await loadBins();
             }
           },
@@ -118,24 +137,21 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
         .subscribe();
   }
 
-  // listen for app lifecycle changes
+  // refresh the dashboard if manager switched to another app and back
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // App has come to the foreground
-      realTimeUpdates();
+    if (state == AppLifecycleState.resumed && mounted) {
+      updateDashboardRealTime();
     }
   }
 
-  // init state to setup real-time updates
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    realTimeUpdates();
+    updateDashboardRealTime();
   }
 
-  // dispose to remove channel subscription
   @override
   void dispose() {
     if (channel != null) {
@@ -153,6 +169,12 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
         .where((bin) => bin['bin_status'] == 'Full')
         .length
         .toString();
+
+    List<Map<String, dynamic>> filteredBins = bins;
+
+    if (selectedBinCard == 'attention') {
+      filteredBins = bins.where((bin) => bin['bin_status'] == 'Full').toList();
+    }
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -260,50 +282,36 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             sliver: SliverToBoxAdapter(
-              child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: getAllBins(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+              child: Builder(
+                builder: (context) {
+                  if (pageIsLoading) {
                     return const Padding(
                       padding: EdgeInsets.all(20.0),
                       child: Center(child: CircularProgressIndicator()),
                     );
                   }
-                  if (snapshot.hasError) {
-                    debugPrint(snapshot.error.toString());
+                  if (errorMessage != null) {
                     return Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Center(
                         child: Text(
-                          'Error loading bins: ${snapshot.error}',
+                          errorMessage!,
                           style: const TextStyle(color: Colors.red),
                         ),
                       ),
                     );
                   }
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  if (bins.isEmpty) {
                     return const Padding(
                       padding: EdgeInsets.only(top: 20.0),
                       child: Center(child: Text('No bins found.')),
                     );
                   }
 
-                  final bins = List<Map<String, dynamic>>.from(snapshot.data!);
-
-                  // sort bins in descending fill level
-                  sortBinsByFillLevel(bins);
-
-                  List<Map<String, dynamic>> filteredBins = bins;
-                  if (selectedBinCard == 'attention') {
-                    filteredBins = bins
-                        .where((bin) => bin['bin_status'] == 'Full')
-                        .toList();
-                  }
-
                   if (filteredBins.isEmpty) {
                     return const Padding(
                       padding: EdgeInsets.only(top: 20.0),
-                      child: Center(child: Text('No bins found.')),
+                      child: Center(child: Text('No filtered bins found.')),
                     );
                   }
 
@@ -329,7 +337,7 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
                         binFillLevel: bin['fill_level'] ?? 0,
                         binLocation:
                             '${bin['floor']?['building']?['building_name'] ?? 'Unknown Building'}, ${bin['floor']?['floor_label'] ?? 'Unknown Floor'}',
-                        deviceProblemLabel: getDeviceProblemLabel(bin),
+                        binDeviceStatus: getDeviceStatus(bin),
                         assignedTo: assignedTo,
                         onAssignPressed: () async {
                           final result = await showModalBottomSheet<bool>(
@@ -344,6 +352,7 @@ class _ManagerDashboardBinsPageState extends State<ManagerDashboardBinsPage>
                             await loadBins();
                           }
                         },
+                        onReturnFromBinInfo: loadBins,
                       );
                     }),
                   );

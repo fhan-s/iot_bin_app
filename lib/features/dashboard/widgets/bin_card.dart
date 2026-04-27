@@ -23,7 +23,7 @@ class BinCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        // Change card colour if it has the selected filter
+        // tapping a card changes its colour to indicate it's selected
         color: hasSelectedFilter
             ? colorScheme.primaryContainer
             : colorScheme.surface,
@@ -37,11 +37,11 @@ class BinCard extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(1.0),
+          padding: const EdgeInsets.all(0.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 1),
+              const SizedBox(height: 10),
               Icon(
                 icon,
                 color: hasSelectedFilter
@@ -70,7 +70,6 @@ class BinCard extends StatelessWidget {
                       : colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 1),
             ],
           ),
         ),

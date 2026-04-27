@@ -7,17 +7,18 @@ class DeviceStatusError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final appColourScheme = Theme.of(context).colorScheme;
 
+    // styling changes depending on whether the sensor is offline or device missing
     final bool isOffline = label == 'Offline';
 
-    final Color bg = isOffline
-        ? scheme.errorContainer
-        : scheme.surfaceContainerHighest;
+    final Color backgroundColour = isOffline
+        ? appColourScheme.errorContainer
+        : appColourScheme.surfaceContainerHighest;
 
-    final Color fg = isOffline
-        ? scheme.onErrorContainer
-        : scheme.onSurfaceVariant;
+    final Color foregroundColour = isOffline
+        ? appColourScheme.onErrorContainer
+        : appColourScheme.onSurfaceVariant;
 
     final IconData icon = isOffline
         ? Icons.wifi_off_rounded
@@ -26,18 +27,18 @@ class DeviceStatusError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: bg,
+        color: backgroundColour,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: fg),
+          Icon(icon, size: 15, color: foregroundColour),
           const SizedBox(width: 6),
           Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: fg,
+              color: foregroundColour,
               fontWeight: FontWeight.bold,
             ),
           ),
