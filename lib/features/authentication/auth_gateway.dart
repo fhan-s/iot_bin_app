@@ -4,23 +4,26 @@ import 'package:iot_bin_app/features/dashboard/janitor/janitor_dashboard.dart';
 import 'package:iot_bin_app/features/dashboard/manager/manager_dashboard.dart';
 import 'package:iot_bin_app/features/login/login_page.dart';
 
+// Will listen continuously for the authentication state changes and redirects users to the appropriate dashboard based on their role.
+
 class AuthenticationGate extends StatelessWidget {
   const AuthenticationGate({super.key});
-
   @override
   Widget build(BuildContext context) {
     final authService = AuthService();
     return StreamBuilder(
-      stream: authService.authStateChanges,
+      stream: authService.authStateChanges, // Listen to auth state changes
       builder: (context, snapshot) {
         try {
+          // show loading while checking auth state
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             );
           }
           final loginSession = authService.currentSession;
-          // User is already logged in
+
+          // user session exists
           if (loginSession != null) {
             return FutureBuilder<String?>(
               future: authService.getUserRole(),

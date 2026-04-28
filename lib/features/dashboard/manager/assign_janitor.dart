@@ -41,8 +41,8 @@ class _AssignJanitorBinState extends State<AssignJanitorBin> {
       ) {
         final assignments = janitor['bin_assignment'];
 
+        // Count how many bins are assigned to this janitor
         final count = assignments?.length ?? 0;
-
         return {
           'id': janitor['id'],
           'full_name': janitor['full_name'],
@@ -99,7 +99,6 @@ class _AssignJanitorBinState extends State<AssignJanitorBin> {
               itemCount: janitors.length,
               itemBuilder: (context, index) {
                 final janitor = janitors[index];
-
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor: Theme.of(

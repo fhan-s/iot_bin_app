@@ -24,11 +24,11 @@ class AuthService {
     if (user == null) {
       return null;
     }
-    final response = await Supabase.instance.client
+    final userRole = await Supabase.instance.client
         .from('janitorial_staff')
         .select('role')
         .eq('id', user.id)
         .maybeSingle();
-    return response?['role'] as String?;
+    return userRole?['role'] as String?;
   }
 }

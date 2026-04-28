@@ -26,7 +26,23 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
   //fetch janitor's allocated bins from bin_assignment table
   Future<List<Map<String, dynamic>>> getAssignedBins() async {
     final binData = await supabase.from('bin_assignment').select('''
-    bin:bin (bin_id, bin_name, bin_status, fill_level,floor:floor (floor_label,building:building (building_name)),sensor_device (device_id,device_status,last_seen_at))
+    bin:bin (
+      bin_id,
+      bin_name,
+      bin_status,
+      fill_level,
+      floor:floor (
+        floor_label,
+        building:building (
+          building_name
+        )
+      ),
+      sensor_device (
+        device_id,
+        device_status,
+        last_seen_at
+      )
+    )
   ''');
 
     return (binData as List)
@@ -60,8 +76,6 @@ class _JanitorDashboardBinsPageState extends State<JanitorDashboardBinsPage>
 
   Future<void> loadBins() async {
     if (!mounted) return;
-
-    // display loading indicator while fetching data
     setState(() {
       pageIsLoading = true;
       errorMessage = null;

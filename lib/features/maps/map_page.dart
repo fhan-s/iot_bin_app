@@ -156,7 +156,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                   final nextLocalY =
                       (current.dy * mapImageHeight) + details.delta.dy;
 
-                  final normalized = _normalizedFromLocalPosition(
+                  final normalized = normalizedFromLocalPosition(
                     localPosition: Offset(
                       nextLocalX + markerSize / 2,
                       nextLocalY + markerSize / 2,
@@ -238,7 +238,8 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
     }
   }
 
-  Offset _normalizedFromLocalPosition({
+  // marker position is stored in the database as normalized coordinates (0 to 1) relative to the floor plan image dimensions.
+  Offset normalizedFromLocalPosition({
     required Offset localPosition,
     required double mapWidth,
     required double mapHeight,
