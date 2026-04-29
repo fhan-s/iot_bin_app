@@ -83,7 +83,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       backgroundColor: Color(
         0xFFf0f0f0,
       ), //appColourScheme.surfaceContainerHighest,
-      appBar: AppBar(title: const Text('Bin IoT App')),
+      appBar: AppBar(title: const Text('Reset Password')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

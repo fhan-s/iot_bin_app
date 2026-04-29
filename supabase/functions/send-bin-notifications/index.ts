@@ -3,10 +3,10 @@ W1975147 - Mohammad Salik
 Code reference: https://supabase.com/docs/guides/functions/examples/push-notifications?queryGroups=platform&platform=fcm
 
 
-Edge function is trigged via a webhook when a new bin status is inserted/updated.
+Edge function is trigged using a webhook that listens in bin table for when a new bin status is inserted/updated.
 
-The Edge function looks up the bin name, the janitor assigned to that bin and the janitor’s FCM device token(s)
-A Firebase access token is generated using a service account and a push notification is sent via FCM to the janitor’s device.
+The Edge function looks up the bin name, the janitor assigned to that bin and the janitor’s FCM device tokens
+A Firebase access token is generated using a service account and a push notification is sent using FCM to the janitor’s device.
 
 
 */
