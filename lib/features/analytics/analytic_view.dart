@@ -126,7 +126,7 @@ class _BinAnalyticPageState extends State<BinAnalyticPage> {
             ),
           ),
 
-          // Time Range Selector
+          // Time Range Selector (daily, weekly, monthly)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(12),

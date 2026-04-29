@@ -26,6 +26,8 @@ class BinFrequencyData {
         final binId = bin['bin_id']?.toString();
         if (binId == null) continue;
 
+        // Store the bin ID and its corresponding name
+
         binListIds.add(binId);
         binIdToName[binId] = bin['bin_name']?.toString() ?? 'Unknown';
       }
@@ -44,7 +46,7 @@ class BinFrequencyData {
         binIdToName[binId] = bin['bin']?['bin_name']?.toString() ?? 'Unknown';
       }
     } else {
-      return {};
+      return {}; // return empty data if user role is not recognized
     }
 
     if (binListIds.isEmpty) return {};

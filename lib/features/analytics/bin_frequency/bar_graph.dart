@@ -16,8 +16,7 @@ class MyBarChart extends StatelessWidget {
     final entries = counts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    // Use the highest value for chart scaling.
-    // Tenary operator if no entries then make max y 0. Otherwise  use first entry value
+    // Use the highest value for chart scaling. if no entries then make max y 0. Otherwise  use first entry value
     final maxY = entries.isEmpty ? 0.0 : entries.first.value.toDouble();
 
     return BarChart(

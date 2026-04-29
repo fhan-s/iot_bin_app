@@ -19,7 +19,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
   String? userRole;
   Future<List<BinMapIcon>>? binsFuture;
   //map icon
-  final TransformationController _mapController = TransformationController();
+  final TransformationController mapController = TransformationController();
 
   String? editingBinId;
   final Map<String, Offset> draftPositions = {};
@@ -94,6 +94,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
     }
   }
 
+  // Builds the confirm and cancel buttons when in editing mode
   Widget buildEditButtons() {
     return Positioned(
       right: 16,
@@ -127,6 +128,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
     );
   }
 
+  //builds markers and enables  dragging of markers to new location when in editing mode
   List<Widget> buildBinMarkers({
     required List<BinMapIcon> bins,
     required double mapImageWidth,
@@ -175,11 +177,6 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
             fillColor: getFillColor(bin.fill),
             isSelected: selectedBinId == bin.id || isEditing,
             label: bin.name,
-            onTap: () {
-              if (!isEditing) {
-                showBinDetails(bin);
-              }
-            },
           ),
         ),
       );
@@ -259,7 +256,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
     });
   }
 
-  // Fetch buildings and floors from Supabase
+  // Fetch buildings from Supabase
   Future<void> getBuildingsFromDatabase() async {
     final data = await supabase
         .from('building')
@@ -271,11 +268,11 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
     });
   }
 
+  // fetch floors only for the selected building
   Future<void> getFloorsFromDatabase(String buildingId) async {
     final data = await supabase
         .from('floor')
         .select('floor_id, floor_label')
-        // fetch floors only for the selected building
         .eq('building_id', buildingId)
         .order('floor_label');
 
@@ -283,7 +280,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
 
     setState(() {
       floorList = List<Map<String, dynamic>>.from(data);
-      // reset selected floor if building changes
+
       selectedFloorId = null;
       selectedFloorSvgAsset = null;
       selectedBinId = null;
@@ -306,6 +303,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
+            // show Bin details after pressing bin marker
             children: [
               Text(
                 bin.name,
@@ -330,6 +328,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                 ],
               ),
               const SizedBox(height: 14),
+              // Move Button
               Row(
                 children: [
                   if (userRole == 'manager') ...[
@@ -350,6 +349,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                     const SizedBox(width: 12),
                   ],
 
+                  // Ok Button
                   Expanded(
                     child: FilledButton.icon(
                       onPressed: () {
@@ -394,7 +394,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
 
   @override
   void dispose() {
-    _mapController.dispose();
+    mapController.dispose();
     supabase.removeChannel(channel);
     selectedBinId = null;
     super.dispose();
@@ -420,6 +420,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
             ),
             const SizedBox(height: 12),
             Row(
+              // Building and Floor Dropdown menus
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
@@ -521,7 +522,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                       child: Text('No bins available for this floor'),
                     );
                   }
-                  // Assuming the floor plan image has a fixed size, e.g., 1600x800 pixels
+                  // Sets the floor plan image as fixed size, eg 1600x800 pixels
                   const double mapImageWidth = 1600;
                   const double mapImageHeight = 800;
                   const double markerSize = 32;
@@ -536,7 +537,7 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                       child: Stack(
                         children: [
                           InteractiveViewer(
-                            transformationController: _mapController,
+                            transformationController: mapController,
                             minScale: 0.3,
                             maxScale: 4.0,
                             boundaryMargin: const EdgeInsets.all(100),
@@ -566,7 +567,8 @@ class _JanitorMapPageState extends State<JanitorMapPage> {
                             ),
                           ),
 
-                          if (editingBinId != null) buildEditButtons(),
+                          if (editingBinId != null)
+                            buildEditButtons(), // show confirm and cancel buttons when in editing mode
                         ],
                       ),
                     ),

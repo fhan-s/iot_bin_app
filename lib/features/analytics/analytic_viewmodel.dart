@@ -29,6 +29,7 @@ class BinAnalyticsViewModel extends ChangeNotifier {
 
     final role = userRole['role'];
 
+    // Retrieves the recent emptied bins using nested Supabase select.
     final emptiedBinsData = await supabase
         .from('bins_emptied')
         .select('''
