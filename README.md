@@ -1,16 +1,12 @@
 # iot_bin_app
 
-A new Flutter project.
+IoT sensor device code can be located in  iot_bin_app/bin_fyp_esp/bin_fyp_esp.ino
 
-## Getting Started
+Supabase server edge functions can be located in iot_bin_app/supabase/functions.
+This includes processing-sensor-reading and send-bin-notifications.
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Mobile application can be accessed by downloading the APK file using your
+mobile device. ensure you trust the app and allow from unknown download sources. Use following
+user credentials:
+Manager: Email: manager1@gmail.com //// Password: 123
+Janitor: Email: janitor1@gmail.com //// Password: 123
